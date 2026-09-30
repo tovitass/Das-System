@@ -163,7 +163,7 @@
       var advisors = Array.isArray(roster) ? roster.filter(function (advisor) { return qualities[advisor.key]; }) : [];
       return '<li class="faction-row"><div class="faction-heading"><strong>' + escapeHtml(faction.name) +
         '</strong></div><div class="faction-stats"><span class="faction-stat">Strength <b>' + strength.toFixed(0) +
-        '%</b></span><span class="faction-stat">Dissent <b>' + dissent.toFixed(0) + '%</b></span></div>' +
+        '%</b></span><span class="faction-stat">Dissent <b>' + dissent.toFixed(2) + '%</b></span></div>' +
         '<p class="faction-orientation">' + escapeHtml(faction.orientation) + '</p><p class="faction-description">' +
         escapeHtml(faction.description) + '</p><p class="faction-advisors"><strong>Advisors:</strong> ' +
         (advisors.length ? advisors.map(function (advisor) { return escapeHtml(advisor.name); }).join(', ') : 'None currently appointed') +
@@ -176,20 +176,6 @@
   var startingRoster = [
     "die_linke", "greens", "spd", "fdp", "cdu", "csu", "afd", "other"
   ];
-
-  // 2017 second-vote shares, including a catch-all for smaller parties.
-  // The election model applies these same shares to each demographic group
-  // until class-specific starting profiles are authored.
-  var startingShares = {
-    die_linke: 9.2,
-    greens: 8.9,
-    spd: 20.5,
-    fdp: 10.7,
-    cdu: 26.8,
-    csu: 6.1,
-    afd: 12.6,
-    other: 5.2
-  };
 
   // Future formations are declared here for later event work. No transition
   // runs automatically in the current game.
@@ -273,9 +259,12 @@
     var qualities = state && state.qualities;
     if (!qualities) return rendered;
     var coalitions = [
-      ["Grand Coalition", "grand"], ["Weimar Coalition", "weimar"],
-      ["Popular Front", "popular"], ["Left Front", "left"],
-      ["Minority government", "minority"]
+      ["Grand Coalition", "grandLabel"], ["Jamaica Coalition", "jamaicaLabel"],
+      ["Kenya Coalition", "kenyaLabel"], ["Leftist Coalition", "leftistLabel"],
+      ["Right Coalition", "rightLabel"], ["Bourgeoisie Coalition", "bourgeoisieLabel"],
+      ["Traffic Light Coalition", "trafficLightLabel"],
+      ["Weimar Coalition", "weimar"], ["Popular Front", "popular"],
+      ["Left Front", "left"], ["Minority government", "minorityLabel"]
     ];
     coalitions.forEach(function (entry) {
       var pattern = new RegExp(entry[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
@@ -304,8 +293,8 @@
     if (!members.length) {
       var maps = {
         grand: ["union", "spd"],
-        weimar: ["spd", "greens", "fdp"],
-        popular: ["spd", "greens", "die_linke"],
+        deutschland: ["spd", "union", "fdp"],
+        kenya:["union", "spd", "greens"],
         left: ["spd", "greens", "die_linke"],
         minority: ["spd"]
       };
@@ -330,8 +319,63 @@
     return members.sort(function (a, b) { return share(b) - share(a); });
   }
 
+  function renderLetterColoredCoalition(label, segments) {
+    var characters = Array.from(String(label));
+    var output = [];
+    var currentParty = null;
+    var currentText = "";
+    var letterIndex = 0;
+    function flush() {
+      if (!currentText) return;
+      output.push(renderName(currentParty, currentText));
+      currentParty = null;
+      currentText = "";
+    }
+    characters.forEach(function (character) {
+      if (/\s/.test(character)) {
+        flush();
+        output.push(escapeHtml(character));
+        return;
+      }
+      var consumed = 0;
+      var partyId = segments[segments.length - 1].party;
+      for (var i = 0; i < segments.length; i++) {
+        consumed += segments[i].letters;
+        if (letterIndex < consumed) { partyId = segments[i].party; break; }
+      }
+      letterIndex++;
+      if (currentParty !== partyId) flush();
+      currentParty = partyId;
+      currentText += character;
+    });
+    flush();
+    return output.join("");
+  }
+
   function renderCoalitionName(label, qualities, type) {
-    var members = coalitionPartners(qualities, type, getVoteShares(qualities));
+    var letterStyles = {
+      grandLabel: [{ party: "cdu", letters: 5 }, { party: "spd", letters: 9 }],
+      jamaicaLabel: [{ party: "cdu", letters: 5 }, { party: "greens", letters: 5 }, { party: "fdp", letters: 6 }],
+      kenyaLabel: [{ party: "cdu", letters: 5 }, { party: "spd", letters: 5 }, { party: "greens", letters: 4 }],
+      kenyaNoSpdLabel: [{ party: "cdu", letters: 5 }, { party: "greens", letters: 9 }],
+      leftistLabel: [{ party: "spd", letters: 6 }, { party: "greens", letters: 6 }, { party: "die_linke", letters: 4 }],
+      minorityLabel: [{ party: "spd", letters: 100 }],
+      rightLabel: [{ party: "cdu", letters: 5 }, { party: "afd", letters: 9 }],
+      bourgeoisieLabel: [{ party: "fdp", letters: 7 }, { party: "cdu", letters: 7 }, { party: "afd", letters: 6 }],
+      trafficLightLabel: [{ party: "spd", letters: 7 }, { party: "greens", letters: 5 }, { party: "fdp", letters: 9 }]
+    };
+    var labelText = String(label);
+    var styleType = type;
+    if (/Grand Coalition/i.test(labelText)) styleType = "grandLabel";
+    else if (/Jamaica Coalition/i.test(labelText)) styleType = "jamaicaLabel";
+    else if (/Kenya Coalition/i.test(labelText)) styleType = (qualities.show_non_spd_coalitions ? "kenyaNoSpdLabel" : "kenyaLabel");
+    else if (/Leftist Coalition/i.test(labelText)) styleType = "leftistLabel";
+    else if (/Right Coalition/i.test(labelText)) styleType = "rightLabel";
+    else if (/Bourgeoisie Coalition/i.test(labelText)) styleType = "bourgeoisieLabel";
+    else if (/Minority government/i.test(labelText)) styleType = "minorityLabel";
+    else if (/Traffic Light Coalition/i.test(labelText)) styleType = "trafficLightLabel";
+    if (letterStyles[styleType]) return renderLetterColoredCoalition(label, letterStyles[styleType]);
+    var members = coalitionPartners(qualities, type, window.electionSystem.voteShares(qualities));
     if (!members.length) return colorizeText(label);
     return String(label).split(/(\s+)/).map(function (word) {
       if (!word || /^\s+$/.test(word)) return escapeHtml(word);
@@ -393,7 +437,7 @@
   // Bourgeoisie Left-Right stat is the bloc's normalized weighted average.
   // Each prior state AfD coalition costs 8 (max 32); each national one costs 20 (max 40).
   function getFirewallInputs(qualities) {
-    var shares = getVoteShares(qualities);
+    var shares = window.electionSystem.voteShares(qualities);
     var ideology = qualities.party_rightwing || {};
     var coalitions = qualities.afd_coalitions || {};
     var ids = Array.isArray(qualities.parties) ? qualities.parties : startingRoster;
@@ -498,7 +542,7 @@
 
   function getBourgeoisieAfdRelation(qualities) {
     var ids = Array.isArray(qualities.parties) ? qualities.parties : startingRoster;
-    var shares = getVoteShares(qualities);
+    var shares = window.electionSystem.voteShares(qualities);
     var candidates = ["fdp", "cdu", "csu", "bvp", "ucd"];
     var totalWeight = 0;
     var weightedRelation = 0;
@@ -589,180 +633,20 @@
     setRelation(qualities, first, second, (current === undefined ? 50 : current) + delta);
   }
 
-  function getVoteShares(qualities) {
-    var ids = Array.isArray(qualities.parties) ? qualities.parties.filter(getParty) : startingRoster;
-    var result = {};
-    var totalWeight = 0;
-    ids.forEach(function (id) { result[id] = 0; });
-    (qualities.classes || []).forEach(function (group) {
-      var weight = Math.max(0, Number(qualities[group]) || 0);
-      var total = 0;
-      ids.forEach(function (id) {
-        total += Math.max(0, Number(qualities[group + '_' + id]) || 0);
-      });
-      if (weight && total) {
-        ids.forEach(function (id) {
-          result[id] += weight * Math.max(0, Number(qualities[group + '_' + id]) || 0) / total;
-        });
-        totalWeight += weight;
-      }
-    });
-    if (!totalWeight) {
-      ids.forEach(function (id) { result[id] = startingShares[id] || 0; });
-      totalWeight = ids.reduce(function (sum, id) { return sum + result[id]; }, 0) || 1;
-    }
-    ids.forEach(function (id) { result[id] = 100 * result[id] / totalWeight; });
-    return applyStreetVoteEffects(result, qualities, ids);
-  }
-
-  function ensureStreetState(qualities) {
-    var defaults = {
-      right_wing_agitation: 45,
-      grassroots_mobilization: 45,
-      left_wing_militancy: 10,
-      verfassungsschutz_focus: 0
-    };
-    Object.keys(defaults).forEach(function (key) {
-      var value = Number(qualities[key]);
-      if (!isFinite(value)) value = defaults[key];
-      qualities[key] = key === "verfassungsschutz_focus" ?
-        Math.max(-100, Math.min(100, value)) : Math.max(0, Math.min(100, value));
-    });
-    return qualities;
-  }
-
-  function applyStreetVoteEffects(shares, qualities, ids) {
-    if (qualities.historical_mode) return shares;
-    ensureStreetState(qualities);
-    var swing = Math.max(-2, Math.min(2,
-      (qualities.grassroots_mobilization - qualities.right_wing_agitation) / 25));
-    var militancyBacklash = Math.max(0, qualities.left_wing_militancy - 35) * 0.025;
-    var farLeftFocusPenalty = Math.max(0, -qualities.verfassungsschutz_focus) * 0.005;
-    var farRightFocusPenalty = Math.max(0, qualities.verfassungsschutz_focus) * 0.005;
-    if (ids.indexOf("spd") !== -1) {
-      shares.spd = Math.max(0, (shares.spd || 0) + swing - militancyBacklash - farLeftFocusPenalty);
-    }
-    if (ids.indexOf("afd") !== -1) {
-      shares.afd = Math.max(0, (shares.afd || 0) - swing * 0.5 - farRightFocusPenalty);
-    }
-    var total = ids.reduce(function (sum, id) { return sum + (shares[id] || 0); }, 0) || 1;
-    ids.forEach(function (id) { shares[id] = 100 * (shares[id] || 0) / total; });
-    return shares;
-  }
-
-  function getPollingEntries(qualities, shares) {
-    var ids = Array.isArray(qualities.parties) ? qualities.parties.filter(getParty) : startingRoster;
-    var unified = !!qualities.union_unified || ids.indexOf("ucd") !== -1;
-    var alliance = qualities.union_alliance_active !== 0 && ids.indexOf("cdu") !== -1 && ids.indexOf("csu") !== -1;
-    var used = {};
-    var entries = [];
-    if (unified) {
-      var unionShare = ids.indexOf("ucd") !== -1 ? (shares.ucd || 0) : (shares.cdu || 0) + (shares.csu || 0);
-      entries.push({ id: "ucd", label: "UCD", share: unionShare });
-      used.ucd = used.cdu = used.csu = true;
-    } else if (alliance) {
-      entries.push({ id: "cdu", label: "CDU + CSU", share: (shares.cdu || 0) + (shares.csu || 0) });
-      used.cdu = used.csu = true;
-    }
-    ids.forEach(function (id) {
-      if (used[id]) return;
-      entries.push({ id: id, label: id === "other" ? "Other (smaller parties)" : parties[id].name, share: shares[id] || 0 });
-    });
-    var order = { die_linke: 10, bsw: 15, spd: 20, greens: 30, cdu: 40, csu: 40, ucd: 40, fdp: 50, afd: 60, other: 70 };
-    entries.sort(function (a, b) { return (order[a.id] || 45) - (order[b.id] || 45); });
-    return entries;
-  }
-
-  function allocateParliamentSeats(entries, seatTotal) {
-    var eligible = entries.filter(function (entry) { return entry.id !== "other" && entry.share >= 5; });
-    var eligibleVotes = eligible.reduce(function (sum, entry) { return sum + entry.share; }, 0);
-    var seats = {};
-    var fractions = [];
-    var assigned = 0;
-    if (eligibleVotes > 0) {
-      eligible.forEach(function (entry) {
-        var exact = entry.share / eligibleVotes * seatTotal;
-        var whole = Math.floor(exact);
-        seats[entry.id] = whole;
-        assigned += whole;
-        fractions.push({ id: entry.id, remainder: exact - whole });
-      });
-      fractions.sort(function (a, b) { return b.remainder - a.remainder; });
-      for (var i = 0; i < seatTotal - assigned; i++) {
-        seats[fractions[i % fractions.length].id]++;
-      }
-    }
-    return { entries: entries, eligible: eligible, seats: seats, seatTotal: seatTotal };
-  }
-
-  function renderParliamentChart(projection) {
-    if (!projection.eligible.length) return '<p class="parliament-empty">No party currently reaches the 5% threshold.</p>';
-    var rows = 9;
-    var radii = [];
-    for (var r = 0; r < rows; r++) radii.push(76 + r * 16);
-    var radiusTotal = radii.reduce(function (sum, radius) { return sum + radius; }, 0);
-    var rowCounts = radii.map(function (radius) { return Math.floor(projection.seatTotal * radius / radiusTotal); });
-    var leftToAssign = projection.seatTotal - rowCounts.reduce(function (sum, count) { return sum + count; }, 0);
-    for (var extra = 0; extra < leftToAssign; extra++) rowCounts[rows - 1 - (extra % rows)]++;
-    var seats = [];
-    radii.forEach(function (radius, row) {
-      var count = rowCounts[row];
-      for (var index = 0; index < count; index++) {
-        var angle = Math.PI - (index + 0.5) * Math.PI / count;
-        seats.push({ angle: angle, radius: radius });
-      }
-    });
-    seats.sort(function (a, b) { return b.angle - a.angle || b.radius - a.radius; });
-    var orderedParties = projection.eligible.slice();
-    var partyIndex = 0;
-    var partySeatsLeft = projection.seats[orderedParties[0].id] || 0;
-    var darkMode = typeof document !== "undefined" && document.body.classList.contains("dark-mode");
-    var circles = seats.map(function (seat) {
-      while (partySeatsLeft <= 0 && partyIndex < orderedParties.length - 1) {
-        partyIndex++;
-        partySeatsLeft = projection.seats[orderedParties[partyIndex].id] || 0;
-      }
-      var entry = orderedParties[partyIndex];
-      partySeatsLeft--;
-      var party = parties[entry.id];
-      var color = (darkMode && (entry.id === "cdu" || entry.id === "csu" || entry.id === "ucd")) ? "#f2f2f2" : party.color;
-      var x = 240 + seat.radius * Math.cos(seat.angle);
-      var y = 238 - seat.radius * Math.sin(seat.angle);
-      return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.05" fill="' + escapeHtml(color) +
-        '" stroke="' + (entry.id === "cdu" || entry.id === "csu" || entry.id === "ucd" ? "#777" : "rgba(0,0,0,.25)") +
-        '" stroke-width=".55"><title>' + escapeHtml(entry.label) + ': ' + projection.seats[entry.id] + ' seats</title></circle>';
-    }).join('');
-    return '<svg class="poll-parliament-chart" viewBox="0 0 480 250" role="img" aria-label="Projected parliament with ' +
-      projection.seatTotal + ' seats"><title>Projected parliament</title><path d="M42 238 A198 198 0 0 1 438 238" class="parliament-outline" />' +
-      circles + '</svg>';
-  }
-
-  function renderPollRows(qualities, projection) {
-    var sortedEntries = projection.entries.slice().sort(function (a, b) { return b.share - a.share; });
-    return '<ul class="party-list">' + sortedEntries.map(function (entry) {
-      var share = entry.share;
-      var status = entry.id === "other" ? "Aggregate only; not allocated as a party" :
-        share < 5 ? "Below 5% threshold" : (projection.seats[entry.id] || 0) + " projected seats";
-      return '<li class="party-row"><div class="party-row-heading">' + renderName(entry.id, entry.label) +
-        '<span class="party-percent">' + share.toFixed(1) + '%</span></div><div class="party-meter"><span style="width:' +
-        share.toFixed(2) + '%;--party-color:' + escapeHtml(parties[entry.id].color) + '"></span></div>' +
-        '<div class="poll-seat-status">' + escapeHtml(status) + '</div></li>';
-    }).join('') + '</ul>';
-  }
-
   function renderMain(qualities) {
     var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     var month = Number(qualities.month) || 0;
     var electionMonth = Number(qualities.next_election_month) || 0;
-    var shares = getVoteShares(qualities);
+    var shares = window.electionSystem.voteShares(qualities);
     var position = qualities.spd_toleration ? "Tolerating the government" :
       qualities.spd_in_government ? "In government" : qualities.spd_caretaker ? "Caretaker government" : "In opposition";
     var coalitionType = qualities.in_grand_coalition ? "grand" : qualities.in_weimar_coalition ? "weimar" :
       qualities.in_popular_front ? "popular" : qualities.in_left_front ? "left" :
       qualities.in_minority_government ? "minority" : "";
-    var govType = coalitionType === "grand" ? "Grand Coalition" : coalitionType === "weimar" ? "Weimar Coalition" :
+    var govType = qualities.government_type || (coalitionType === "grand" ? "Grand Coalition" : coalitionType === "weimar" ? "Weimar Coalition" :
       coalitionType === "popular" ? "Popular Front" : coalitionType === "left" ? "Left Front" :
-      coalitionType === "minority" ? "Minority government" : qualities.chancellor ? "Government" : "Not formed";
+      coalitionType === "minority" ? "Minority government" : qualities.government_formation_pending ? "Government formation pending" :
+      qualities.spd_caretaker ? "Caretaker government" : qualities.chancellor ? "Government" : "Not formed");
     function officeHolder(name, partyId) {
       if (!name) return "Not set";
       if (!partyId) return name;
@@ -782,8 +666,8 @@
       (coalitionType ? renderCoalitionName(govType, qualities, coalitionType) : colorizeText(govType)) +
       '</span></div>' + row("Chancellor", chancellor) +
       row("President", president) + row("SPD position", position) +
-      row("Coalition dissent", (qualities.coalition_dissent === undefined ? 0 : qualities.coalition_dissent)) +
-      row("SPD faction dissent", (qualities.dissent_percent === undefined ? (qualities.dissent || 0) : qualities.dissent_percent) + "%") +
+      (Array.isArray(qualities.government_parties) && qualities.government_parties.length > 1 && qualities.government_parties.some(function(id) { return String(id).toLowerCase() === "spd"; }) ? row("Coalition dissent", (Number(qualities.coalition_dissent) || 0).toFixed(0) + "%") : "") +
+      row("SPD faction dissent", (Number(qualities.dissent_percent === undefined ? (qualities.dissent || 0) : qualities.dissent_percent) || 0).toFixed(2) + "%") +
       '<hr><h3>Party and resources</h3>' + row("SPD polling", (shares.spd || 0).toFixed(1) + "%") +
       row("Resources available", qualities.resources === undefined ? 0 : qualities.resources) +
       '<hr><h3>Time</h3>' + row("Month / year", currentDate) + '</section>';
@@ -841,7 +725,7 @@
         '</ul><p>Reichswehr: ' + (Number(qualities.reichswehr_strength) || 0) + ' · Prussian police: ' +
         (Number(qualities.prussian_police_strength) || 0) + '</p></section>';
     }
-    ensureStreetState(qualities);
+    window.electionSystem.ensureStreetState(qualities);
     var focus = qualities.verfassungsschutz_focus;
     var focusPosition = ((focus + 100) / 2).toFixed(1);
     var swing = Math.max(-2, Math.min(2,
@@ -863,15 +747,6 @@
   function renderSidebar(sceneId, qualities) {
     if (!qualities) return null;
     if (sceneId === 'status.street') return renderStreetPanel(qualities);
-    if (sceneId === 'status.polls') {
-      var shares = getVoteShares(qualities);
-      var entries = getPollingEntries(qualities, shares);
-      var projection = allocateParliamentSeats(entries, 598);
-      return '<section class="party-panel polls-panel"><h3>Projected parliament</h3>' +
-        '<p>Illustrative 598-seat distribution from current polling. Only parties reaching 5% receive seats.</p>' +
-        renderParliamentChart(projection) + '<h3>Projected election results</h3>' +
-        renderPollRows(qualities, projection) + '</section>';
-    }
     if (sceneId === 'status') return renderMain(qualities);
     if (sceneId === 'status.politics') {
       var ids = Array.isArray(qualities.parties) ? qualities.parties.filter(getParty) : startingRoster;
@@ -929,18 +804,8 @@
     return null;
   }
 
-  function initializeElection(qualities) {
+  function initializePartyState(qualities) {
     qualities.parties = startingRoster.slice();
-    if (!Array.isArray(qualities.classes)) {
-      qualities.classes = [
-        "workers", "old_middle", "new_middle", "rural", "unemployed", "catholics"
-      ];
-    }
-    qualities.classes.forEach(function (group) {
-      startingRoster.forEach(function (id) {
-        qualities[group + "_" + id] = startingShares[id];
-      });
-    });
     ensurePolitics(qualities);
 
     // Opening government for the modern starting scenario.
@@ -958,7 +823,10 @@
     qualities.in_spd_majority = 0;
     qualities.in_minority_government = 0;
     qualities.in_emergency_government = 0;
-    qualities.government_parties = ["SPD", "CDU", "CSU"];
+    ["kpd", "z", "ddp", "dvp", "dnvp", "nsdap", "bvp"].forEach(function (id) {
+      qualities[id + "_in_government"] = 0;
+    });
+    qualities.government_parties = ["spd", "cdu", "csu"];
     qualities.union_alliance_active = 1;
   }
 
@@ -966,7 +834,6 @@
     parties: parties,
     factions: spdFactions,
     startingRoster: startingRoster.slice(),
-    startingShares: Object.assign({}, startingShares),
     plannedTransitions: plannedTransitions,
     get: getParty,
     name: function (id) {
@@ -980,7 +847,7 @@
     activeIds: function () {
       return startingRoster.slice();
     },
-    initializeElection: initializeElection,
+    initializePartyState: initializePartyState,
     setRelation: setRelation,
     adjustRelation: adjustRelation,
     setUnionAlliance: setUnionAlliance,
@@ -991,7 +858,6 @@
     getNationalCoalitionChance: getNationalCoalitionChance,
     canFormCoalition: canFormCoalition,
     recordCoalition: recordCoalition,
-    getVoteShares: getVoteShares,
     renderSidebar: renderSidebar,
     setDetailsExpanded: function (expanded) { detailsExpanded = !!expanded; },
     renderName: renderName,
