@@ -90,7 +90,7 @@
     ids.forEach(function (id) {
       if (!used[id]) entries.push({ id: id, label: id === "other" ? "Other (smaller parties)" : partySystem.name(id), share: shares[id] || 0 });
     });
-    var order = { die_linke: 10, bsw: 15, spd: 20, greens: 30, cdu: 40, csu: 40, ucd: 40, fdp: 50, afd: 60, other: 70 };
+    var order = { die_linke: 10, bsw: 15, spd: 20, greens: 30, fdp: 35, cdu: 40, csu: 40, ucd: 40, afd: 60, other: 70 };
     return entries.sort(function (a, b) { return (order[a.id] || 45) - (order[b.id] || 45); });
   }
 
@@ -108,7 +108,7 @@
       var party = partySystem.get(entry.id) || { color: "#777" };
       return '<li class="party-row"><div class="party-row-heading">' + partySystem.renderName(entry.id, entry.label) + '<span class="party-percent">' + entry.share.toFixed(1) + '%</span></div><div class="party-meter"><span style="width:' + entry.share.toFixed(2) + '%;--party-color:' + escape(party.color) + '"></span></div><div class="poll-seat-status">' + escape(status) + '</div></li>';
     }).join("");
-    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>The tick marks the 5% threshold used for seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul></section>';
+    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>Parties below 5% are excluded from seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul></section>';
   }
 
   function allocateSeats(shares, seatTotal, threshold) {
@@ -189,6 +189,17 @@
     var party = window.partySystem.get(leader) || { name: leader };
     var unionCaretaker = leader === "cdu" && isUnion;
     var label = unionCaretaker ? "CDU/CSU" : party.name;
+    [
+      ["foreign_minister", "foreign_minister_party"], ["interior_minister", "interior_minister_party"],
+      ["justice_minister", "justice_minister_party"], ["labor_minister", "labor_minister_party"],
+      ["defense_minister", "defense_minister_party"], ["economic_minister", "economic_minister_party"],
+      ["finance_minister", "finance_minister_party"], ["health_minister", "health_minister_party"],
+      ["environment_minister", "environment_minister_party"], ["transport_minister", "transport_minister_party"],
+      ["education_minister", "education_minister_party"]
+    ].forEach(function (ministry) {
+      qualities[ministry[0]] = label + " caretaker minister";
+      qualities[ministry[1]] = leader;
+    });
     var previousChancellorParty = String(qualities.chancellor_party || "").toLowerCase();
     qualities.caretaker_party = leader;
     qualities.caretaker_parties = unionCaretaker ? ["cdu", "csu"] : [leader];
@@ -233,7 +244,7 @@
     qualities.election_records.push(record);
     qualities.n_elections = (Number(qualities.n_elections) || 0) + 1;
     qualities.government_formation_pending = 1;
-    qualities.government_type = "Government formation pending";
+    qualities.government_type = "Pending.";
     qualities.government_active = 0;
     scheduleNextElection(qualities, 4, 9);
     return record;

@@ -553,7 +553,6 @@ table {
 .faction-stat b { font-variant-numeric: tabular-nums; }
 .faction-orientation, .faction-description { margin: .1em 0; font-size: .82em; }
 .faction-orientation { font-weight: 600; }
-.faction-advisors { margin: .25em 0 0; font-size: .8em; }
 .cabinet-roster { list-style: none; margin: .5em 0; padding: 0; }
 .cabinet-roster li { display: flex; justify-content: space-between; gap: .65em; padding: .3em 0; border-bottom: 1px solid rgba(0,0,0,.12); }
 .cabinet-roster li:last-child { border-bottom: 0; }
@@ -563,8 +562,6 @@ body.dark-mode .cabinet-roster li { border-bottom-color: rgba(255,255,255,.45); 
 .parliament-chart { display: block; width: 100%; height: auto; margin: .3em auto .6em; }
 .parliament-semicircle { max-width: none; }
 .projected-half-donut { max-width: 38em; overflow: visible; }
-.projected-half-donut .threshold-mark { stroke: var(--text-color); stroke-width: 2.2; }
-.projected-half-donut .threshold-label { fill: var(--text-color); font-size: 13px; font-weight: 700; text-anchor: middle; }
 .parliament-outline { fill: none; stroke: rgba(0,0,0,.2); stroke-width: 1; }
 .parliament-empty { text-align: center; padding: 1em; border: 1px dashed rgba(0,0,0,.25); }
 .election-results-mode .election-parliament-chart { max-width: none; }
@@ -586,6 +583,7 @@ body.dark-mode .party-name[data-party-id="ucd"] { color: #f4f4f4 !important; }
 .firewall-meter { height: .6em; background: rgba(0,0,0,.14); margin: .4em 0 .7em; }
 .firewall-meter span { display: block; height: 100%; background: #39833b; }
 .politics-details { margin-top: .7em; border-top: 1px solid rgba(0,0,0,.2); padding-top: .5em; }
+.firewall-details { border-top: 0; padding-top: 0; }
 .politics-details summary { cursor: pointer; font-weight: 700; }
 .politics-details p { font-size: .9em; }
 
@@ -604,8 +602,7 @@ body.dark-mode .bourgeoisie-label {
 body.dark-mode .faction-row { border-bottom-color: rgba(255,255,255,.55); }
 body.dark-mode .faction-stat { border-color: rgba(255,255,255,.65); }
 body.dark-mode .faction-strength-distribution { background: rgba(255,255,255,.24); }
-body.dark-mode .firewall-detail-stats { border-left-color: rgba(255,255,255,.55); }
-.firewall-detail-stats { padding: .2em .5em; border-left: 3px solid rgba(0,0,0,.14); }
+.firewall-detail-stats { padding: .2em .5em; }
 .firewall-detail-stats p { margin: .55em 0; }
 
 /* Give the left status box more room without widening the right tools panel. */
@@ -664,6 +661,8 @@ body.dark-mode .street-impact { border-top-color: rgba(255,255,255,.35); }
 .modern-ministry-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .7rem; }
 .modern-ministry-choice:disabled { opacity: .45; cursor: default; }
 .modern-ministry-choice.selected { color: #287b35; }
+.modern-ministry-domain-note, .modern-ministry-cost-note { font-size: .8em; font-weight: 400; color: #696969; }
+body.dark-mode .modern-ministry-domain-note, body.dark-mode .modern-ministry-cost-note { color: #c0c0c0; }
 .modern-ministry-progress { font-weight: 700; }
 .modern-coalition-seat-share { font-weight: 400; font-size: .82em; color: #777; }
 .modern-government-formed-summary { margin: .8rem 0; padding: .7rem; border-left: 3px solid #887864; }

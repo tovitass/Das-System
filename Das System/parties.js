@@ -159,15 +159,11 @@
     var rows = spdFactions.map(function (faction, index) {
       var strength = metrics[index].strength;
       var dissent = metrics[index].dissent;
-      var roster = qualities.advisor_roster && qualities.advisor_roster[faction.id];
-      var advisors = Array.isArray(roster) ? roster.filter(function (advisor) { return qualities[advisor.key]; }) : [];
       return '<li class="faction-row"><div class="faction-heading"><strong>' + escapeHtml(faction.name) +
         '</strong></div><div class="faction-stats"><span class="faction-stat">Strength <b>' + strength.toFixed(0) +
         '%</b></span><span class="faction-stat">Dissent <b>' + dissent.toFixed(2) + '%</b></span></div>' +
         '<p class="faction-orientation">' + escapeHtml(faction.orientation) + '</p><p class="faction-description">' +
-        escapeHtml(faction.description) + '</p><p class="faction-advisors"><strong>Advisors:</strong> ' +
-        (advisors.length ? advisors.map(function (advisor) { return escapeHtml(advisor.name); }).join(', ') : 'None currently appointed') +
-        '</p></li>';
+        escapeHtml(faction.description) + '</p></li>';
     }).join('');
     return '<div class="faction-strength-distribution" role="img" aria-label="Faction strength distribution">' + segments +
       '</div><ul class="party-list faction-list">' + rows + '</ul>';
@@ -648,7 +644,7 @@
       qualities.in_minority_government ? "minority" : "";
     var govType = qualities.government_type || (coalitionType === "grand" ? "Grand Coalition" : coalitionType === "weimar" ? "Weimar Coalition" :
       coalitionType === "popular" ? "Popular Front" : coalitionType === "left" ? "Left Front" :
-      coalitionType === "minority" ? "Minority government" : qualities.government_formation_pending ? "Government formation pending" :
+      coalitionType === "minority" ? "Minority government" : qualities.government_formation_pending ? "Pending." :
       qualities.spd_caretaker ? "Caretaker government" : qualities.chancellor ? "Government" : "Not formed");
     function officeHolder(name, partyId) {
       if (!name) return "Not set";
@@ -673,7 +669,8 @@
       row("SPD faction dissent", (Number(qualities.dissent_percent === undefined ? (qualities.dissent || 0) : qualities.dissent_percent) || 0).toFixed(2) + "%") +
       '<hr><h3>Party and resources</h3>' + row("SPD polling", (shares.spd || 0).toFixed(1) + "%") +
       row("Resources available", qualities.resources === undefined ? 0 : qualities.resources) +
-      '<hr><h3>Time</h3>' + row("Month / year", currentDate) + '</section>';
+      '<hr><h3>Time</h3>' + row("Month / year", currentDate) +
+      '<details class="politics-details cabinet-details"><summary>Cabinet members</summary>' + renderMinisterRoster(qualities) + '</details></section>';
   }
 
   function renderMinisterRoster(qualities) {
@@ -690,11 +687,16 @@
       ["Transport & Infrastructure", "transport_minister", "transport_minister_party"],
       ["Education & Research", "education_minister", "education_minister_party"]
     ];
+    var caretakerId = String(qualities.caretaker_party || "").toLowerCase();
+    var caretakerActive = !!caretakerId && /caretaker/i.test(String(qualities.government_type || ""));
+    var caretakerParty = getParty(caretakerId);
+    var caretakerLabel = caretakerId === "cdu" && Array.isArray(qualities.caretaker_parties) && qualities.caretaker_parties.indexOf("csu") !== -1 ? "CDU/CSU" : caretakerParty ? caretakerParty.name : caretakerId;
     return '<ul class="cabinet-roster">' + ministries.map(function (ministry) {
-      var party = String(qualities[ministry[2]] || "");
+      var party = caretakerActive ? caretakerId : String(qualities[ministry[2]] || "");
       var partyId = party.toLowerCase();
+      var ministerName = caretakerActive ? caretakerLabel + " caretaker minister" : (qualities[ministry[1]] || 'Vacant');
       return '<li><strong>' + escapeHtml(ministry[0]) + '</strong><span>' +
-        escapeHtml(qualities[ministry[1]] || 'Vacant') + (party ? ' (' + (getParty(partyId) ? renderName(partyId, party) : escapeHtml(party)) + ')' : '') +
+        escapeHtml(ministerName) + (party ? ' (' + (getParty(partyId) ? renderName(partyId, caretakerActive ? caretakerLabel : party) : escapeHtml(party)) + ')' : '') +
         '</span></li>';
     }).join('') + '</ul>';
   }
@@ -793,10 +795,9 @@
       return '<section class="party-panel politics-panel"><h3>SPD relations</h3>' +
         '<ul class="party-list politics-relations">' + relations + '</ul>' +
         '<hr><h3>SPD factions</h3><p class="faction-note">Strength shows relative faction influence; dissent is the weighted average of each faction’s existing dissent tracks.</p>' + renderFactionRows(qualities) +
-        '<details class="politics-details cabinet-details"><summary>Cabinet ministers</summary>' + renderMinisterRoster(qualities) + '</details>' +
         '<hr><h3>Firewall integrity</h3><div class="firewall-score"><strong>' + firewall + ' / 100</strong>' +
         '<span>' + firewallDescription(firewall) + '</span></div><div class="firewall-meter"><span style="width:' + firewall + '%"></span></div>' +
-        '<details class="politics-details"' + (detailsExpanded ? ' open' : '') + '><summary>Details</summary>' +
+        '<details class="politics-details firewall-details"' + (detailsExpanded ? ' open' : '') + '><summary>Details</summary>' +
         '<div class="firewall-detail-stats">' +
         '<p><strong><span class="bourgeoisie-label">Bourgeoisie</span> Left–Right:</strong> <span style="color:' + ideologyColor(bourgeoisieRightStrength) + '">' +
         Math.round(bourgeoisieRightStrength) + ' / 100 · ' + ideologyDescription(bourgeoisieRightStrength) + '</span></p>' +

@@ -17,26 +17,6 @@
       }).observe(content, { childList: true, subtree: true });
     }
 
-    // Pick one wallpaper for each theme on this page load. Scene changes and
-    // theme switches reuse those picks, so the background stays consistent.
-    var themeWallpapers = {
-      light: ["img/backround_bright.jpg", "img/backround_bright_2.jpg"],
-      dark: ["img/backround_dark.jpg", "img/backround_dark_2.jpg"]
-    };
-    var selectedWallpapers = {
-      light: themeWallpapers.light[Math.floor(Math.random() * themeWallpapers.light.length)],
-      dark: themeWallpapers.dark[Math.floor(Math.random() * themeWallpapers.dark.length)]
-    };
-    var knownWallpapers = themeWallpapers.light.concat(themeWallpapers.dark);
-    var originalSetBg = ui.setBg;
-    ui.setBg = function(background) {
-      if (knownWallpapers.indexOf(background) !== -1) {
-        var mode = document.body.classList.contains("dark-mode") ? "dark" : "light";
-        background = selectedWallpapers[mode];
-      }
-      return originalSetBg.call(ui, background);
-    };
-
     // Add your custom code here.
   };
 
@@ -86,13 +66,13 @@
 
   window.disableBg = function() {
       window.dendryUI.disable_bg = true;
-      document.body.style.backgroundImage = 'none';
+      window.dendryUI.setBg('none');
       window.dendryUI.saveSettings();
   };
 
   window.enableBg = function() {
       window.dendryUI.disable_bg = false;
-      window.dendryUI.setBg(window.dendryUI.dendryEngine.state.bg);
+      applyThemeBackground();
       window.dendryUI.saveSettings();
   };
 
@@ -151,9 +131,15 @@
   };
 
   function applyThemeBackground() {
-    if (!ui || !ui.dendryEngine || !ui.dendryEngine.state || ui.disable_bg) return;
-    var background = ui.dendryEngine.state.bg;
-    if (background) ui.setBg(background);
+    var activeUI = ui || window.dendryUI;
+    if (!activeUI || activeUI.disable_bg || typeof activeUI.setBg !== 'function') return;
+    var stateBackground = activeUI.dendryEngine && activeUI.dendryEngine.state
+      ? activeUI.dendryEngine.state.bg
+      : null;
+    var themeBackground = activeUI.dark_mode
+      ? 'img/backround_dark.jpg'
+      : 'img/backround_bright.jpg';
+    activeUI.setBg(stateBackground || themeBackground);
   }
 
   // Populates the checkboxes in the options view
@@ -231,6 +217,51 @@
     return { seats: coalitionSeats, percent: total ? 100 * coalitionSeats / total : 0 };
   }
 
+  var modernMinistries = [
+    ['foreign','Foreign Affairs'], ['interior','Interior'], ['justice','Justice'],
+    ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance'],
+    ['health','Health'], ['environment','Environment'], ['transport','Transport/Infrastructure'],
+    ['education','Education/Research']
+  ];
+  var modernPartyLabels = {spd:'SPD',cdu:'CDU',csu:'CSU',greens:'Greens',fdp:'FDP',die_linke:'Die Linke',afd:'AfD'};
+
+  function ministryCost(item, coalition) {
+    return (item[0] === 'environment' && coalition.parts.indexOf('greens') !== -1) ||
+      (item[0] === 'finance' && coalition.parts.indexOf('fdp') !== -1) ? 2 : 1;
+  }
+
+  function updateModernCabinet(qualities, coalition, result, spdChoices) {
+    var orderedParties = coalition.parts.slice().sort(function(a, b) {
+      return (Number(result.seats[b]) || 0) - (Number(result.seats[a]) || 0);
+    });
+    var partnerIds = coalition.parts.filter(function(id) { return id !== 'spd'; });
+    var fallback = orderedParties.filter(function(id) { return id !== 'spd'; })[0] || orderedParties[0] || coalition.chancellorParty.toLowerCase();
+    var portfolioFields = {foreign:'foreign',interior:'interior',justice:'justice',labor:'labor',economic:'economic',finance:'finance',health:'health',environment:'environment',transport:'transport',education:'education'};
+    var holders = {};
+    (spdChoices || []).forEach(function(key) { holders[key] = 'spd'; });
+    partnerIds.forEach(function(id) {
+      var claimedMinistry = id === 'greens' ? 'environment' : id === 'fdp' ? 'finance' : null;
+      if (claimedMinistry && !holders[claimedMinistry]) holders[claimedMinistry] = id;
+    });
+    partnerIds.forEach(function(id) {
+      if (modernMinistries.some(function(item) { return holders[item[0]] === id; })) return;
+      var available = modernMinistries.filter(function(item) { return !holders[item[0]]; })[0];
+      if (available) holders[available[0]] = id;
+    });
+    modernMinistries.forEach(function(item) {
+      var role = portfolioFields[item[0]];
+      var claim = item[0] === 'environment' ? 'greens' : item[0] === 'finance' ? 'fdp' : null;
+      var holder = holders[item[0]] || (claim && coalition.parts.indexOf(claim) !== -1 ? claim : fallback);
+      var label = modernPartyLabels[holder] || holder.toUpperCase();
+      qualities[role + '_minister_party'] = holder;
+      qualities[role + '_minister'] = label + ' minister';
+    });
+    var defenseHolder = coalition.chancellorParty.toLowerCase();
+    var defenseLabel = modernPartyLabels[defenseHolder] || coalition.chancellorParty;
+    qualities.defense_minister_party = defenseHolder;
+    qualities.defense_minister = defenseLabel + ' minister';
+  }
+
   function renderModernElectionControls(gameState, content) {
     if (!gameState || gameState.sceneId !== 'modern_federal_election' || !content) return;
     var old = document.getElementById('modern-election-controls');
@@ -252,7 +283,7 @@
       { id:'deutschland', name:'Deutschland Coalition', parts:['cdu','csu','spd','fdp'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'kenya', name:'Kenya Coalition', parts:['cdu','csu','spd','greens'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'traffic', name:'Traffic Light Coalition', parts:['spd','greens','fdp'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
-      { id:'left', name:'Leftist Coalition', parts:['spd','greens','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
+      { id:'left', name:'Left Coalition', parts:['spd','greens','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'minority', name:'SPD Minority Government', parts:['spd'], spd:true, minority:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'jamaica', name:'Jamaica Coalition', parts:['cdu','csu','greens','fdp'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'right', name:'Right Coalition', parts:['cdu','csu','afd'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
@@ -280,43 +311,57 @@
         var inCoalition = coalitionSeatShare(result, coalition.parts);
         var spdSeats = Number(result.seats.spd) || 0;
         var ministryCount = inCoalition.seats ? Math.round(10 * spdSeats / inCoalition.seats) : 0;
-        var ministries = [
-          ['foreign','Foreign Affairs'], ['interior','Interior'], ['justice','Justice'],
-          ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance'],
-          ['health','Health'], ['environment','Environment'], ['transport','Transport/Infrastructure'],
-          ['education','Education/Research']
-        ];
+        var maxSpdMinistries = Math.max(0, 10 - coalition.parts.filter(function(id) { return id !== 'spd'; }).length);
         var chosen = Array.isArray(qualities.spd_ministries_selected) ? qualities.spd_ministries_selected : [];
+        if (chosen.length > maxSpdMinistries) {
+          chosen = chosen.slice(0, maxSpdMinistries);
+          qualities.spd_ministries_selected = chosen;
+        }
+        var chosenPoints = chosen.reduce(function(total, key) {
+          var item = modernMinistries.filter(function(entry) { return entry[0] === key; })[0];
+          return total + (item ? ministryCost(item, coalition) : 0);
+        }, 0);
         var heading = document.createElement('h2'); heading.textContent = 'Choose SPD Ministries'; controls.appendChild(heading);
         var explanation = document.createElement('p');
         explanation.textContent = 'The SPD holds ' + (inCoalition.seats ? (100 * spdSeats / inCoalition.seats).toFixed(1) : '0.0') +
-          '% of coalition seats and may choose ' + ministryCount + ' of 10 ministries. Selected ministries cannot be changed.';
+          '% of coalition seats and has ' + ministryCount + ' ministry points. Select which ministries the SPD will control.' +
+          (maxSpdMinistries < ministryCount ? ' The SPD can choose up to ' + maxSpdMinistries + ' ministries so every coalition partner receives at least one.' : '');
         controls.appendChild(explanation);
         var progress = document.createElement('p'); progress.className='modern-ministry-progress';
-        progress.textContent = chosen.length + ' of ' + ministryCount + ' ministries selected'; controls.appendChild(progress);
+        progress.textContent = chosenPoints + ' of ' + ministryCount + ' ministry points used'; controls.appendChild(progress);
         var list = document.createElement('div'); list.className='modern-ministry-options'; controls.appendChild(list);
-        ministries.forEach(function(item) {
+        modernMinistries.forEach(function(item) {
           var selected = chosen.indexOf(item[0]) !== -1;
-          var button = appendButton(list, item[1] + (selected ? ' — Selected' : ''), function() {
-            if (chosen.length >= ministryCount || chosen.indexOf(item[0]) !== -1) return;
+          var cost = ministryCost(item, coalition);
+          var domainParty = item[0] === 'environment' && coalition.parts.indexOf('greens') !== -1 ? 'Greens' :
+            item[0] === 'finance' && coalition.parts.indexOf('fdp') !== -1 ? 'FDP' : null;
+          var button = appendButton(list, item[1], function() {
+            if (chosenPoints + cost > ministryCount || chosen.length >= maxSpdMinistries || selected) return;
             chosen.push(item[0]); qualities.spd_ministries_selected = chosen;
             renderModernElectionControls(gameState, content);
           }, 'modern-ministry-choice');
-          button.disabled = selected || chosen.length >= ministryCount;
+          if (cost > 1) {
+            button.appendChild(document.createTextNode(' '));
+            var costNote = document.createElement('span'); costNote.className = 'modern-ministry-cost-note';
+            costNote.textContent = '(2 Points)'; button.appendChild(costNote);
+          }
+          if (selected) button.appendChild(document.createTextNode(' — Selected'));
+          if (domainParty) {
+            button.appendChild(document.createElement('br'));
+            var domainNote = document.createElement('span'); domainNote.className = 'modern-ministry-domain-note';
+            domainNote.appendChild(document.createTextNode('This is usually the domain of '));
+            var partyName = document.createElement('span');
+            partyName.innerHTML = window.partySystem.renderName(domainParty === 'Greens' ? 'greens' : 'fdp', domainParty);
+            domainNote.appendChild(partyName);
+            domainNote.appendChild(document.createTextNode('.'));
+            button.appendChild(domainNote);
+          }
+          button.disabled = selected || chosen.length >= maxSpdMinistries || chosenPoints + cost > ministryCount;
           if (selected) button.classList.add('selected');
         });
-        if (chosen.length === ministryCount) {
+        if (chosenPoints === ministryCount || chosen.length === maxSpdMinistries) {
           appendButton(controls, 'Confirm Cabinet', function() {
-            var portfolioFields = {foreign:'foreign',interior:'interior',justice:'justice',labor:'labor',economic:'economic',finance:'finance',health:'health',environment:'environment',transport:'transport',education:'education'};
-            var otherParty = coalition.parts.filter(function(id) { return id !== 'spd' && id !== 'csu'; }).sort(function(a,b) {
-              return (Number(result.seats[b])||0) - (Number(result.seats[a])||0);
-            })[0] || 'spd';
-            var partyLabels = {spd:'SPD',cdu:'CDU',csu:'CSU',greens:'Greens',fdp:'FDP',die_linke:'Die Linke',afd:'AfD'};
-            ministries.forEach(function(item) {
-              var role=portfolioFields[item[0]], holder=chosen.indexOf(item[0]) !== -1 ? 'spd' : otherParty;
-              qualities[role+'_minister_party']=partyLabels[holder] || holder.toUpperCase();
-              if (holder==='spd') qualities[role+'_minister']='SPD appointee';
-            });
+            updateModernCabinet(qualities, coalition, result, chosen);
             qualities.government_formation_pending=0; qualities.government_active=1;
             returnToGame();
           }, 'modern-election-action primary');
@@ -358,7 +403,7 @@
         qualities.spd_ministries_selected=[];
         qualities.government_toleration_parties=[];
         if (option.spd) { qualities.modern_election_flow='ministries'; renderModernElectionControls(gameState,content); }
-        else { qualities.government_formation_pending=0; returnToGame(); }
+        else { updateModernCabinet(qualities, option, result, []); qualities.government_formation_pending=0; returnToGame(); }
       });
       var share=document.createElement('span'); share.className='modern-coalition-seat-share';
       share.textContent=shares.percent.toFixed(1)+'% of seats'; card.appendChild(share);

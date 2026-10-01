@@ -37,6 +37,9 @@
 
   function renderProjection(entries, threshold, partyDefinitions) {
     threshold = Math.max(0, Math.min(100, Number(threshold) || 5));
+    entries = entries.filter(function (entry) {
+      return entry.id !== "other" && Number(entry.share) > threshold;
+    });
     var centerX = 240, centerY = 218, outer = 180, inner = 98;
     var angle = Math.PI;
     var colors = partyDefinitions || {};
@@ -51,7 +54,7 @@
         ' L' + coords(c) + ' A' + inner + ' ' + inner + ' 0 ' + large + ' 0 ' + coords(d) + ' Z';
     }
     var total = entries.reduce(function (sum, entry) { return sum + Math.max(0, Number(entry.share) || 0); }, 0) || 100;
-    var parts = ['<svg class="parliament-chart projected-half-donut" viewBox="0 0 480 270" role="img" aria-label="Projected vote shares shown as a half-donut; 5% threshold">', '<title>Projected vote shares and 5% threshold</title>'];
+    var parts = ['<svg class="parliament-chart projected-half-donut" viewBox="0 0 480 270" role="img" aria-label="Projected vote shares above the 5% threshold shown as a half-donut">', '<title>Projected vote shares above the 5% threshold</title>'];
     entries.forEach(function (entry) {
       var share = Math.max(0, Number(entry.share) || 0);
       if (!share) return;
@@ -60,9 +63,6 @@
       parts.push('<path d="' + arcPath(angle, next) + '" fill="' + escapeHtml(party.color) + '" stroke="var(--content-bg-color)" stroke-width="2"><title>' + escapeHtml(party.name || entry.label || entry.id) + ': ' + share.toFixed(1) + '%</title></path>');
       angle = next;
     });
-    var tickAngle = Math.PI - Math.PI * threshold / 100;
-    var tickA = point(outer + 2, tickAngle), tickB = point(outer + 20, tickAngle), label = point(outer + 34, tickAngle);
-    parts.push('<line x1="' + tickA[0].toFixed(2) + '" y1="' + tickA[1].toFixed(2) + '" x2="' + tickB[0].toFixed(2) + '" y2="' + tickB[1].toFixed(2) + '" class="threshold-mark"/>');
     parts.push('</svg>');
     return parts.join('');
   }
