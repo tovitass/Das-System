@@ -10,6 +10,10 @@
     if (content && window.MutationObserver) {
       new MutationObserver(function() {
         var state = ui.dendryEngine && ui.dendryEngine.state;
+        if (content) {
+          content.classList.toggle('startup-screen', !!state &&
+            (state.sceneId === 'root.start' || state.sceneId === 'start_menu'));
+        }
         if (state && state.sceneId === 'modern_federal_election') {
           var choices = content.querySelector('ul.choices');
           if (choices) choices.remove();
@@ -218,10 +222,10 @@
   }
 
   var modernMinistries = [
-    ['foreign','Foreign Affairs'], ['interior','Interior'], ['justice','Justice'],
-    ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance'],
-    ['health','Health'], ['environment','Environment'], ['transport','Transport/Infrastructure'],
-    ['education','Education/Research']
+    ['foreign','Foreign Affairs'], ['interior','Interior Affairs'], ['justice','Justice Affairs'],
+    ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance Affairs'],
+    ['health','Health Affairs'], ['environment','Environment Affairs'], ['transport','Transport/Infrastructure Affairs'],
+    ['education','Education/Research Affairs']
   ];
   var modernPartyLabels = {spd:'SPD',cdu:'CDU',csu:'CSU',greens:'Greens',fdp:'FDP',die_linke:'Die Linke',afd:'AfD'};
 

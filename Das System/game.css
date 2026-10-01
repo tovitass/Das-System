@@ -56,6 +56,59 @@ header, #content, footer {
   padding: 1em 1.5em 1.5em 1.5em;
   box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
 }
+#content.startup-screen {
+  padding: 1.5em 2em 1.75em;
+}
+#content.startup-screen > p {
+  max-width: 36em;
+  margin: 0 auto 0.9em;
+  line-height: 1.7;
+  text-indent: 0;
+}
+#content.startup-screen > blockquote {
+  max-width: 32em;
+  margin: 0 auto 0.45em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-color);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.08em;
+  font-style: italic;
+  line-height: 1.65;
+  text-align: center;
+}
+#content.startup-screen > blockquote + p {
+  margin: 0 auto 1.5em;
+  color: #766b5c;
+  font-size: 0.8em;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+#content.startup-screen > p:nth-of-type(2) {
+  margin: 0 auto 1.4em;
+  color: var(--link-color);
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+#content.startup-screen > p:nth-of-type(7),
+#content.startup-screen > p:nth-of-type(8) {
+  max-width: 30em;
+  margin: 1.35em auto;
+  text-align: center;
+}
+#content.startup-screen > p:nth-of-type(7) {
+  font-size: 1.1em;
+  font-weight: 600;
+}
+#content.startup-screen > p:nth-of-type(8) {
+  margin-top: -1.1em;
+  font-size: 1.25em;
+  font-weight: 700;
+}
 footer {
   margin-top: 1em;
   font-size: 0.8em;

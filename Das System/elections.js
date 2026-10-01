@@ -19,10 +19,13 @@
         qualities[group + "_" + id] = STARTING_SHARES[id] || 0;
       });
     });
-    qualities.next_election_year = 2021;
+    var currentYear = Number(qualities.year) || 2017;
+    var currentMonth = Number(qualities.month) || 1;
+    var electionYear = currentYear + (currentMonth > 9 ? 1 : 0);
+    qualities.next_election_year = electionYear;
     qualities.next_election_month = 9;
     qualities.next_election_time = (Number(qualities.time) || 0) +
-      (2021 - (Number(qualities.year) || 2017)) * 12 + (9 - (Number(qualities.month) || 1));
+      (electionYear - currentYear) * 12 + (9 - currentMonth);
     qualities.election_records = qualities.election_records || [];
     qualities.n_elections = Number(qualities.n_elections) || 0;
   }
@@ -163,7 +166,7 @@
     var now = Number(qualities.time) || 0;
     var targetTime = now + monthsFromNow;
     var existingTime = Number(qualities.next_election_time) || 0;
-    if (!existingTime || existingTime > targetTime) {
+    if (!existingTime || existingTime <= now || existingTime > targetTime) {
       var monthIndex = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1) - 1 + monthsFromNow;
       qualities.next_election_time = targetTime;
       qualities.next_election_year = Math.floor(monthIndex / 12);

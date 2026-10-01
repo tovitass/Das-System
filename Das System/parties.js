@@ -627,7 +627,7 @@
   }
 
   function adjustRelation(qualities, first, second, delta) {
-    ensureRelations(qualities);
+    ensurePolitics(qualities);
     var current = qualities.party_relations[first] && qualities.party_relations[first][second];
     setRelation(qualities, first, second, (current === undefined ? 50 : current) + delta);
   }
@@ -676,16 +676,16 @@
   function renderMinisterRoster(qualities) {
     var ministries = [
       ["Foreign Affairs", "foreign_minister", "foreign_minister_party"],
-      ["Interior", "interior_minister", "interior_minister_party"],
-      ["Justice", "justice_minister", "justice_minister_party"],
+      ["Interior Affairs", "interior_minister", "interior_minister_party"],
+      ["Justice Affairs", "justice_minister", "justice_minister_party"],
       ["Labour & Social Affairs", "labor_minister", "labor_minister_party"],
       ["Defence", "defense_minister", "defense_minister_party"],
       ["Economic Affairs", "economic_minister", "economic_minister_party"],
-      ["Finance", "finance_minister", "finance_minister_party"],
-      ["Health", "health_minister", "health_minister_party"],
-      ["Environment", "environment_minister", "environment_minister_party"],
-      ["Transport & Infrastructure", "transport_minister", "transport_minister_party"],
-      ["Education & Research", "education_minister", "education_minister_party"]
+      ["Finance Affairs", "finance_minister", "finance_minister_party"],
+      ["Health Affairs", "health_minister", "health_minister_party"],
+      ["Environment Affairs", "environment_minister", "environment_minister_party"],
+      ["Transport & Infrastructure Affairs", "transport_minister", "transport_minister_party"],
+      ["Education & Research Affairs", "education_minister", "education_minister_party"]
     ];
     var caretakerId = String(qualities.caretaker_party || "").toLowerCase();
     var caretakerActive = !!caretakerId && /caretaker/i.test(String(qualities.government_type || ""));
