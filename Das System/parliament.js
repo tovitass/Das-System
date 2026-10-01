@@ -23,7 +23,7 @@
     radii.forEach(function (radius, row) {
       for (var seat = 0; seat < counts[row]; seat++) {
         var angle = Math.PI - (seat + 0.5) * Math.PI / counts[row];
-        var wedge = 1 - (seat + 0.5) / counts[row];
+        var wedge = (seat + 0.5) / counts[row];
         var partyIndex = boundaries.findIndex(function (end) { return wedge <= end; });
         if (partyIndex < 0) partyIndex = parties.length - 1;
         var id = parties[partyIndex];
@@ -32,7 +32,7 @@
         dots.push('<circle cx="' + (240 + radius * Math.cos(angle)).toFixed(1) + '" cy="' + (238 - radius * Math.sin(angle)).toFixed(1) + '" r="3.05" fill="' + color + '" stroke="#777" stroke-width=".55" class="parliament-seat" style="--seat-index:' + (seatOrder++) + '"><title>' + party.name + ': ' + projection.seats[id] + ' seats</title></circle>');
       }
     });
-    return '<svg class="parliament-chart ' + (chartClass || 'parliament-semicircle') + '" viewBox="0 0 480 250" role="img" aria-label="Parliament with ' + projection.seatTotal + ' seats"><title>Parliament seat distribution</title><path d="M42 238 A198 198 0 0 1 438 238" class="parliament-outline" />' + dots.join("") + '</svg>';
+    return '<svg class="parliament-chart ' + (chartClass || 'parliament-semicircle') + '" viewBox="32 0 416 250" role="img" aria-label="Parliament with ' + projection.seatTotal + ' seats"><title>Parliament seat distribution</title><path d="M42 238 A198 198 0 0 1 438 238" class="parliament-outline" />' + dots.join("") + '</svg>';
   }
 
   function renderProjection(entries, threshold, partyDefinitions) {
@@ -62,7 +62,7 @@
     });
     var tickAngle = Math.PI - Math.PI * threshold / 100;
     var tickA = point(outer + 2, tickAngle), tickB = point(outer + 20, tickAngle), label = point(outer + 34, tickAngle);
-    parts.push('<line x1="' + tickA[0].toFixed(2) + '" y1="' + tickA[1].toFixed(2) + '" x2="' + tickB[0].toFixed(2) + '" y2="' + tickB[1].toFixed(2) + '" class="threshold-mark"/><text x="' + label[0].toFixed(2) + '" y="' + (label[1] + 5).toFixed(2) + '" class="threshold-label">' + threshold + '%</text>');
+    parts.push('<line x1="' + tickA[0].toFixed(2) + '" y1="' + tickA[1].toFixed(2) + '" x2="' + tickB[0].toFixed(2) + '" y2="' + tickB[1].toFixed(2) + '" class="threshold-mark"/>');
     parts.push('</svg>');
     return parts.join('');
   }
@@ -89,8 +89,11 @@
       displayResult.eligible = displayResult.eligible.filter(function (id) { return id !== "csu"; });
       displayParties.cdu = Object.assign({}, partyDefinitions.cdu, { name: "CDU/CSU" });
     }
+    var leftToRight = { die_linke: 0, spd: 1, greens: 2, fdp: 3, cdu: 4, csu: 4, afd: 5 };
     var eligible = displayResult.eligible.slice().sort(function (a, b) {
-      return (Number(displayResult.seats[b]) || 0) - (Number(displayResult.seats[a]) || 0);
+      var rankA = Object.prototype.hasOwnProperty.call(leftToRight, a) ? leftToRight[a] : 99;
+      var rankB = Object.prototype.hasOwnProperty.call(leftToRight, b) ? leftToRight[b] : 99;
+      return rankA - rankB || String(a).localeCompare(String(b));
     });
     displayResult.eligible = eligible;
     var rows = eligible.map(function (id) {

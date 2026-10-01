@@ -400,6 +400,7 @@ img {
   right: 0;
   margin: 0 auto;
   z-index: -97;
+  display: none;
 }
 .sprite {
     position: absolute;
@@ -560,13 +561,13 @@ table {
 body.dark-mode .cabinet-roster li { border-bottom-color: rgba(255,255,255,.45); }
 
 .parliament-chart { display: block; width: 100%; height: auto; margin: .3em auto .6em; }
-.parliament-semicircle { max-width: 32em; }
+.parliament-semicircle { max-width: none; }
 .projected-half-donut { max-width: 38em; overflow: visible; }
 .projected-half-donut .threshold-mark { stroke: var(--text-color); stroke-width: 2.2; }
 .projected-half-donut .threshold-label { fill: var(--text-color); font-size: 13px; font-weight: 700; text-anchor: middle; }
 .parliament-outline { fill: none; stroke: rgba(0,0,0,.2); stroke-width: 1; }
 .parliament-empty { text-align: center; padding: 1em; border: 1px dashed rgba(0,0,0,.25); }
-.election-results-mode .election-parliament-chart { max-width: 32rem; }
+.election-results-mode .election-parliament-chart { max-width: none; }
 .election-parliament-chart .parliament-seat { opacity: 0; transform-box: fill-box; transform-origin: center; animation: parliament-seat-arrive .32s cubic-bezier(.18,.72,.32,1.1) forwards; animation-delay: calc(var(--seat-index) * 1.1ms); }
 @keyframes parliament-seat-arrive { from { opacity: 0; transform: scale(.15); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .election-parliament-chart .parliament-seat { opacity: 1; animation: none; transform: none; } }
@@ -653,7 +654,7 @@ body.dark-mode .street-impact { border-top-color: rgba(255,255,255,.35); }
 .modern-election-controls { margin: 1rem 0 0; }
 .modern-election-controls h2 { margin: .5rem 0; }
 .modern-coalition-option { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .8rem; padding: .7rem; border: 1px solid var(--border-color, #887864); }
-.modern-coalition-option + .modern-coalition-option { border-top: 0; }
+.modern-coalition-option + .modern-coalition-option { border-top: 1px solid #887864; }
 .modern-coalition-choice { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
 .modern-coalition-choice:disabled { cursor: default; opacity: .45; }
 .modern-coalition-seat-share { font-weight: 700; }
@@ -678,14 +679,14 @@ body.dark-mode .street-impact { border-top-color: rgba(255,255,255,.35); }
   gap: .35rem .9rem;
   padding: .8rem .75rem;
   border: 0;
-  border-left: 4px solid #38834a;
+  border-left: 1px solid #887864;
   border-bottom: 1px solid rgba(80, 72, 59, .22);
   background: transparent;
 }
-.modern-coalition-option + .modern-coalition-option { border-top: 0; }
+.modern-coalition-option + .modern-coalition-option { border-top: 1px solid #887864; }
 .modern-coalition-option.possible { background: rgba(57, 130, 72, .055); }
 .modern-coalition-option.unavailable {
-  border-left-color: #9a9a9a;
+  border-left: 1px solid #b0aaa1;
   background: rgba(100, 100, 100, .09);
   color: #727272;
 }
@@ -694,7 +695,7 @@ body.dark-mode .street-impact { border-top-color: rgba(255,255,255,.35); }
   grid-column: 2;
   grid-row: 1;
   font-weight: 400;
-  font-size: .82em;
+  font-size: .95em;
   color: #777;
   white-space: nowrap;
 }
@@ -726,7 +727,7 @@ body.dark-mode .modern-coalition-option.unavailable .modern-coalition-status { c
   margin: .65rem 0;
   padding: .85rem .9rem;
   border: 1px solid #887864;
-  border-left: 5px solid #38834a;
+  border-left: 1px solid #887864;
   border-radius: 7px;
   color: inherit;
   font: inherit;
@@ -743,7 +744,7 @@ body.dark-mode .modern-coalition-option.unavailable .modern-coalition-status { c
 .modern-coalition-option:focus-visible { outline: 2px solid #4b7d9b; outline-offset: 2px; }
 .modern-coalition-option.unavailable {
   border-color: #b0aaa1;
-  border-left-color: #929292;
+  border-left: 1px solid #b0aaa1;
   background: rgba(100, 100, 100, .09);
   color: #727272;
   cursor: not-allowed;
@@ -752,6 +753,8 @@ body.dark-mode .modern-coalition-option.unavailable .modern-coalition-status { c
 .modern-coalition-choice { display: block; }
 .modern-coalition-option .modern-coalition-status { margin-top: .35rem; }
 .modern-coalition-option .modern-coalition-unavailable-note { margin-top: .35rem; }
+.modern-coalition-option .modern-coalition-choice { align-self: center; line-height: 1.3; }
+.modern-election-action.coalition-toggle { border-radius: 7px; color: inherit; }
 body.dark-mode .modern-coalition-option { border-color: #8e8579; }
 body.dark-mode .modern-coalition-option.possible { background: rgba(77, 170, 95, .12); }
 body.dark-mode .modern-coalition-option.unavailable { border-color: #777; background: rgba(255,255,255,.07); }

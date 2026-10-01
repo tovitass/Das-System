@@ -263,6 +263,7 @@
       ["Kenya Coalition", "kenyaLabel"], ["Leftist Coalition", "leftistLabel"],
       ["Right Coalition", "rightLabel"], ["Bourgeoisie Coalition", "bourgeoisieLabel"],
       ["Traffic Light Coalition", "trafficLightLabel"],
+      ["Deutschland Coalition", "deutschlandLabel"],
       ["Weimar Coalition", "weimar"], ["Popular Front", "popular"],
       ["Left Front", "left"], ["Minority government", "minorityLabel"]
     ];
@@ -362,7 +363,8 @@
       minorityLabel: [{ party: "spd", letters: 100 }],
       rightLabel: [{ party: "cdu", letters: 5 }, { party: "afd", letters: 9 }],
       bourgeoisieLabel: [{ party: "fdp", letters: 7 }, { party: "cdu", letters: 7 }, { party: "afd", letters: 6 }],
-      trafficLightLabel: [{ party: "spd", letters: 7 }, { party: "greens", letters: 5 }, { party: "fdp", letters: 9 }]
+      trafficLightLabel: [{ party: "spd", letters: 7 }, { party: "fdp", letters: 5 }, { party: "greens", letters: 9 }],
+      deutschlandLabel: [{ party: "cdu", letters: 7 }, { party: "spd", letters: 7 }, { party: "fdp", letters: 6 }]
     };
     var labelText = String(label);
     var styleType = type;
@@ -374,6 +376,7 @@
     else if (/Bourgeoisie Coalition/i.test(labelText)) styleType = "bourgeoisieLabel";
     else if (/Minority government/i.test(labelText)) styleType = "minorityLabel";
     else if (/Traffic Light Coalition/i.test(labelText)) styleType = "trafficLightLabel";
+    else if (/Deutschland Coalition/i.test(labelText)) styleType = "deutschlandLabel";
     if (letterStyles[styleType]) return renderLetterColoredCoalition(label, letterStyles[styleType]);
     var members = coalitionPartners(qualities, type, window.electionSystem.voteShares(qualities));
     if (!members.length) return colorizeText(label);

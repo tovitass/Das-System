@@ -6,6 +6,17 @@
     ui = dendryUI;
     game = ui.game;
 
+    var content = document.getElementById('content');
+    if (content && window.MutationObserver) {
+      new MutationObserver(function() {
+        var state = ui.dendryEngine && ui.dendryEngine.state;
+        if (state && state.sceneId === 'modern_federal_election') {
+          var choices = content.querySelector('ul.choices');
+          if (choices) choices.remove();
+        }
+      }).observe(content, { childList: true, subtree: true });
+    }
+
     // Pick one wallpaper for each theme on this page load. Scene changes and
     // theme switches reuse those picks, so the background stays consistent.
     var themeWallpapers = {
@@ -224,11 +235,11 @@
     if (!gameState || gameState.sceneId !== 'modern_federal_election' || !content) return;
     var old = document.getElementById('modern-election-controls');
     if (old) old.remove();
+    var choiceList = content.querySelector('ul.choices');
+    if (choiceList) choiceList.remove();
     var qualities = gameState.qualities || {};
     var result = qualities.modern_election_result;
     if (!result || !result.seats) return;
-    var choiceList = content.querySelector('ul.choices');
-    if (choiceList) choiceList.style.display = 'none';
 
     var controls = document.createElement('section');
     controls.id = 'modern-election-controls';
@@ -238,6 +249,7 @@
     var mode = qualities.modern_election_flow || 'coalitions';
     var coalitionOptions = [
       { id:'grand', name:'Grand Coalition', parts:['spd','cdu','csu'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
+      { id:'deutschland', name:'Deutschland Coalition', parts:['cdu','csu','spd','fdp'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'kenya', name:'Kenya Coalition', parts:['cdu','csu','spd','greens'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'traffic', name:'Traffic Light Coalition', parts:['spd','greens','fdp'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'left', name:'Leftist Coalition', parts:['spd','greens','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
@@ -350,8 +362,6 @@
       });
       var share=document.createElement('span'); share.className='modern-coalition-seat-share';
       share.textContent=shares.percent.toFixed(1)+'% of seats'; card.appendChild(share);
-      var status=document.createElement('span'); status.className='modern-coalition-status';
-      status.textContent=canForm?'MAJORITY POSSIBLE':'NOT VIABLE'; card.appendChild(status);
       if (!canForm) {
         var note=document.createElement('p'); note.className='modern-coalition-unavailable-note';
         note.textContent=shares.seats<majority&&!option.minority?'Cannot form a parliamentary majority.':'Party compatibility prevents this coalition.';
