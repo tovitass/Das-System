@@ -10602,7 +10602,24 @@
     },
     "foreign_policy.improve_west": {
       "id": "foreign_policy.improve_west",
-      "title": "Improve our relations with the Western Allies.",
+      "title": {
+        "content": [
+          "Improve our relations with the Western Allies.",
+          {
+            "type": "conditional",
+            "content": "Strengthen cooperation with our EU and NATO partners.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
       "onArrival": [
         {
           "$code": "Q['west_relation'] = (Q['west_relation'] || 0) + 2;\nQ['reparations_negotiation'] = (Q['reparations_negotiation'] || 0) + 1;"
@@ -10617,6 +10634,11 @@
               "type": "conditional",
               "content": "This is difficult to do when France is occupying a major portion of Germany's territory, but we are working on that part.",
               "predicate": 0
+            },
+            {
+              "type": "conditional",
+              "content": "We work with France and other European partners to coordinate on shared challenges, deepen political cooperation, and build support for a stable, rules-based international order.",
+              "predicate": 1
             }
           ]
         },
@@ -10624,7 +10646,13 @@
           {
             "type": "predicate",
             "fn": {
-              "$code": "return ((Q['young_plan_seen'] || 0) == 0);"
+              "$code": "return (((Q['modern_scenario'] || 0) !== 1 || Q['historical_mode']) && ((Q['young_plan_seen'] || 0) == 0));"
+            }
+          },
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
             }
           }
         ]
@@ -11764,7 +11792,7 @@
         },
         {
           "type": "paragraph",
-          "content": "The AfD is on track to enter the Bundestag for the first time. The refugee crisis has reshaped German politics. Trust in the established parties is falling, and the SPD is struggling to define what it stands for in a changing country."
+          "content": "The AfD is on track to enter the Bundestag for the first time in this years Election in September. The refugee crisis has reshaped German politics. Trust in the established parties is falling, and the SPD is struggling to define what it stands for in a changing country."
         },
         {
           "type": "paragraph",
@@ -11796,7 +11824,7 @@
               "type": "emphasis-2",
               "content": "Library"
             },
-            " in the top left."
+            " in the top."
           ]
         }
       ]
@@ -18690,16 +18718,48 @@
     },
     "foreign_policy.improve_east": {
       "id": "foreign_policy.improve_east",
-      "title": "Improve our relations with our eastern neighbors.",
+      "title": {
+        "content": [
+          "Improve our relations with our eastern neighbors.",
+          {
+            "type": "conditional",
+            "content": "Build stronger ties with Germany’s eastern European partners.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
       "onArrival": [
         {
           "$code": "Q['east_relation'] = (Q['east_relation'] || 0) + 2;"
         }
       ],
       "content": {
-        "content": "We also aim to improve relations with our eastern neighbors, Poland and Czechoslovakia, who are righfully terrified of German aggression. Hopefully we can convince them of our peaceful intentions.",
+        "content": [
+          "We also aim to improve relations with our eastern neighbors, Poland and Czechoslovakia, who are righfully terrified of German aggression. Hopefully we can convince them of our peaceful intentions.",
+          {
+            "type": "conditional",
+            "content": "We reach out to Poland, Czechia, and other partners in central and eastern Europe. Regular dialogue and practical cooperation can build trust and address shared security concerns.",
+            "predicate": 0
+          }
+        ],
         "type": "paragraph"
-      }
+      },
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "judiciary.as_is": {
       "id": "judiciary.as_is",
@@ -23101,30 +23161,100 @@
     },
     "foreign_policy.improve_soviet": {
       "id": "foreign_policy.improve_soviet",
-      "title": "Improve our relations with the Soviet Union.",
-      "subtitle": "We could also broach the question of the Die Linke...",
+      "title": {
+        "content": [
+          "Improve our relations with the Soviet Union.",
+          {
+            "type": "conditional",
+            "content": "Open a diplomatic dialogue with Russia.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
+      "subtitle": {
+        "content": [
+          "We could also broach the question of the Die Linke...",
+          {
+            "type": "conditional",
+            "content": "Explore practical cooperation while maintaining clear boundaries on security and human rights.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
       "options": [
         {
           "id": "@foreign_policy.soviet_economic_aid_yes_mil",
-          "title": "Provide aid, in exchange for Bundeswehr assistance."
+          "title": "Provide aid alongside closer military cooperation."
         },
         {
           "id": "@foreign_policy.soviet_economic_aid_yes",
-          "title": "Provide aid, in exchange for only good relations."
+          "title": "Provide aid to strengthen diplomatic ties."
         },
         {
           "id": "@foreign_policy.soviet_economic_aid_no",
-          "title": "Don't provide aid."
+          "title": "Decline to provide aid."
         }
       ],
       "content": [
         {
           "type": "paragraph",
-          "content": "The Soviet Union also suffered from the international order created by the Treaty of Versailles; they have been participating in our secret rearmament program. The Treaty of Rapallo in 1922 affirmed our friendly relations."
+          "content": [
+            {
+              "type": "conditional",
+              "content": "Germany can pursue dialogue with Russia on trade, regional security, and international crises. Moscow has also asked for economic assistance. We must weigh the cost against the possible diplomatic benefits and the concerns of our coalition partners.",
+              "predicate": 0
+            },
+            {
+              "type": "conditional",
+              "content": "The Soviet Union was also excluded from parts of the postwar international order and has cooperated with Germany in the past. The 1922 Treaty of Rapallo established closer relations between our countries.",
+              "predicate": 1
+            }
+          ]
         },
         {
           "type": "paragraph",
-          "content": "The Soviets are asking for economic and developmental assistance. They are still a poor country on the whole, and are desperately trying to catch up to the western powers. There is a chance that our anti-left-wing coalition partners would be upset, but we could assuage them by asking the Soviets for secret assistance in training and equiping the Bundeswehr."
+          "content": [
+            {
+              "type": "conditional",
+              "content": "Russia has asked for economic assistance. Supporting the request could strengthen diplomatic ties, but coalition partners may question the cost and the signal it sends.",
+              "predicate": 0
+            },
+            {
+              "type": "conditional",
+              "content": "The Soviets are asking for economic and developmental assistance. They are still a poor country on the whole, and are desperately trying to catch up to the western powers. There is a chance that our anti-left-wing coalition partners would be upset, but we could assuage them by asking the Soviets for secret assistance in training and equiping the Bundeswehr.",
+              "predicate": 1
+            }
+          ]
+        }
+      ],
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        },
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return !((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
         }
       ]
     },
@@ -25293,9 +25423,52 @@
         }
       ],
       "content": {
-        "content": "The Soviets are pleased that we have sent them aid, and have agreed to help train our military. The Bundeswehr appreciates our support.",
+        "content": [
+          {
+            "type": "conditional",
+            "content": "The Soviets are pleased that we have sent them aid, and have agreed to help train our military. The Bundeswehr appreciates our support.",
+            "predicate": 1
+          },
+          {
+            "type": "conditional",
+            "content": "Our assistance opens a channel for military dialogue with Russia. The Bundeswehr welcomes the opportunity for professional contact, while our partners will watch closely for any security implications.",
+            "predicate": 0
+          }
+        ],
         "type": "paragraph"
-      }
+      },
+      "title": {
+        "content": [
+          "Provide aid, in exchange for Bundeswehr assistance.",
+          {
+            "type": "conditional",
+            "content": "Provide assistance alongside military-to-military dialogue.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        },
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return !((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "police.investigate_far_right": {
       "id": "police.investigate_far_right",
@@ -27081,21 +27254,64 @@
       "options": [
         {
           "id": "@foreign_policy.kpd",
-          "title": "Ask if Moscow could help repair our relations with the Die Linke."
+          "title": "Ask whether Moscow can help ease tensions with Germany’s left-wing party."
         },
         {
           "id": "@foreign_policy.wittorf",
-          "title": "Do the Soviets know about the Wittorf Affair? Do they know that we know?"
+          "title": "Discuss Moscow’s political ties with Germany’s left."
         },
         {
           "id": "@root",
-          "title": "Do not mention the Die Linke."
+          "title": "Keep the discussion focused on diplomacy."
         }
       ],
       "content": {
-        "content": "The Soviets are pleased that we have sent them aid, and have not asked for anything specific in exchange. Our coalition partners are less pleased.",
+        "content": [
+          {
+            "type": "conditional",
+            "content": "The Soviets are pleased that we have sent them aid, and have not asked for anything specific in exchange. Our coalition partners are less pleased.",
+            "predicate": 1
+          },
+          {
+            "type": "conditional",
+            "content": "We provide economic assistance and keep the relationship focused on diplomacy. Coalition partners remain wary of the cost and of appearing too accommodating toward Moscow.",
+            "predicate": 0
+          }
+        ],
         "type": "paragraph"
-      }
+      },
+      "title": {
+        "content": [
+          "Provide aid, in exchange for only good relations.",
+          {
+            "type": "conditional",
+            "content": "Provide economic assistance without a military agreement.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        },
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return !((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "police.investigate_far_right_success": {
       "id": "police.investigate_far_right_success",
@@ -28581,9 +28797,52 @@
     "foreign_policy.soviet_economic_aid_no": {
       "id": "foreign_policy.soviet_economic_aid_no",
       "content": {
-        "content": "The Soviets are slightly upset, but they seemed to expect this answer.",
+        "content": [
+          {
+            "type": "conditional",
+            "content": "The Soviets are slightly upset, but they seemed to expect this answer.",
+            "predicate": 1
+          },
+          {
+            "type": "conditional",
+            "content": "Russia is disappointed by our decision, but the request had never been certain to succeed.",
+            "predicate": 0
+          }
+        ],
         "type": "paragraph"
-      }
+      },
+      "title": {
+        "content": [
+          "Don't provide aid.",
+          {
+            "type": "conditional",
+            "content": "Decline the request for economic assistance.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        },
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return !((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "police.investigate_far_right_failure": {
       "id": "police.investigate_far_right_failure",
@@ -30529,7 +30788,7 @@
         }
       ],
       "content": {
-        "content": "We also mention the Die Linke in our conversations with the Soviet ambassador. They claim that the Die Linke is entirely independent of the Soviet government, and that the conflict is Thälmann's doing. But, soon after our conversation we notice a slight improvement in attitudes from the Die Linke.",
+        "content": "We raise concerns about Moscow’s relationship with Germany’s left. Our counterparts deny directing the party, but the conversation helps ease tensions.",
         "type": "paragraph"
       }
     },
@@ -31575,7 +31834,7 @@
     "foreign_policy.wittorf": {
       "id": "foreign_policy.wittorf",
       "viewIf": {
-        "$code": "return ((((Q['wittorf_secret'] || 0)===1) && ((((((Q['year'] || 0)===2018) && ((Q['month'] || 0) < 6))) || ((Q['year'] || 0)===2017)))) && ((Q['wittorf_soviet_union'] || 0)===0));"
+        "$code": "return ((Q.modern_scenario === 1 && !Q.historical_mode) || ((Q.wittorf_secret === 1) && ((Q.year === 2018 && Q.month < 6) || Q.year === 2017) && (Q.wittorf_soviet_union === 0)));"
       },
       "unavailableSubtitle": "It is impossible that Stalin and the Comintern could be moved on their policy.",
       "onArrival": [
@@ -31585,7 +31844,7 @@
       ],
       "maxVisits": 1,
       "content": {
-        "content": "Of course Stalin and the various leaders of the Comintern know about the Wittorf Affair, but they do not seem to know that we know as well. The Comintern was planning to build a narrative around the affair that absolves Thälmann, but perhaps now they will be less inclined to defend him.",
+        "content": "We discuss Moscow’s political ties with the German left. Our counterparts deny influencing the party, but the exchange clarifies their position and our concerns.",
         "type": "paragraph"
       },
       "countVisitsMax": 1
@@ -32450,7 +32709,7 @@
         "$code": "return ((Q['eu'] || 0)===0);"
       },
       "viewIf": {
-        "$code": "return (((Q['black_thursday_seen'] || 0)===1) && ((Q['customs_union'] || 0)===0));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && ((((Q['black_thursday_seen'] || 0)===1) && ((Q['customs_union'] || 0)===0))));"
       },
       "options": [
         {
@@ -33999,7 +34258,7 @@
         ]
       },
       "viewIf": {
-        "$code": "return (((Q['reparations'] || 0) > -2) && ((Q['reparations_negotiation'] || 0) < 3));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && ((((Q['reparations'] || 0) > -2) && ((Q['reparations_negotiation'] || 0) < 3))));"
       },
       "onArrival": [
         {
@@ -34849,7 +35108,7 @@
       "title": "The Western Allies are finally willing to pause our reparations payments!",
       "subtitle": "Our negotiations have been successful.",
       "viewIf": {
-        "$code": "return ((((Q['reparations_negotiation'] || 0) >= 3) && ((Q['black_thursday_seen'] || 0) == 1)) && ((Q['reparations'] || 0) > -2));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && (((((Q['reparations_negotiation'] || 0) >= 3) && ((Q['black_thursday_seen'] || 0) == 1)) && ((Q['reparations'] || 0) > -2))));"
       },
       "onArrival": [
         {
@@ -35334,7 +35593,7 @@
       "id": "foreign_policy.expose",
       "title": "Expose the secret rearmament plans of the previous foreign ministry!",
       "viewIf": {
-        "$code": "return ((Q['rearmament_exposed'] || 0) == 0);"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && (((Q['rearmament_exposed'] || 0) == 0)));"
       },
       "onArrival": [
         {
@@ -35934,7 +36193,7 @@
       "id": "foreign_policy.concordat_negotiate",
       "title": "Negotiate a Concordat between the Germany and the Vatican.",
       "viewIf": {
-        "$code": "return ((((Q['prussian_concordat'] || 0)===1) && ((Q['reichskonkordat'] || 0)===0)) && ((Q['reichskonkordat_progress'] || 0) < 4));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && (((((Q['prussian_concordat'] || 0)===1) && ((Q['reichskonkordat'] || 0)===0)) && ((Q['reichskonkordat_progress'] || 0) < 4))));"
       },
       "onArrival": [
         {
@@ -36306,7 +36565,7 @@
       "id": "foreign_policy.concordat",
       "title": "We can sign a Concordat with the Vatican!",
       "viewIf": {
-        "$code": "return (((Q['reichskonkordat_progress'] || 0) >= 4) && ((Q['reichskonkordat'] || 0)===0));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && ((((Q['reichskonkordat_progress'] || 0) >= 4) && ((Q['reichskonkordat'] || 0)===0))));"
       },
       "onArrival": [
         {
@@ -36555,7 +36814,7 @@
       "id": "foreign_policy.support_austria",
       "title": "Diplomatically support Austrian democracy against the Dollfuß dictatorship.",
       "viewIf": {
-        "$code": "return (((Q['austrian_parliament_seen'] || 0)===1) && ((Q['austrian_civil_war_seen'] || 0)===0));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && ((((Q['austrian_parliament_seen'] || 0)===1) && ((Q['austrian_civil_war_seen'] || 0)===0))));"
       },
       "onArrival": [
         {
@@ -36942,7 +37201,7 @@
         "$code": "return ((Q['budget'] || 0) >= 1);"
       },
       "viewIf": {
-        "$code": "return (((Q['austrian_parliament_seen'] || 0)===1) && ((Q['austrian_civil_war_seen'] || 0)===0));"
+        "$code": "return (!(Q['modern_scenario'] === 1 && !Q['historical_mode']) && ((((Q['austrian_parliament_seen'] || 0)===1) && ((Q['austrian_civil_war_seen'] || 0)===0))));"
       },
       "onArrival": [
         {
@@ -37273,7 +37532,24 @@
     },
     "foreign_policy.european_union": {
       "id": "foreign_policy.european_union",
-      "title": "Take steps to form a \"European Union\".",
+      "title": {
+        "content": [
+          "Take steps to form a \"European Union\".",
+          {
+            "type": "conditional",
+            "content": "Advance a new step in European integration.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
       "subtitle": "Is a \"United States of Europe\" possible?",
       "unavailableSubtitle": {
         "content": [
@@ -37316,9 +37592,24 @@
         }
       ],
       "content": {
-        "content": "Forming a \"United States of Europe\" has long been part of the Social Democratic foreign program. Finally, we are taking steps towards it. Given our positive relations with the other countries of Europe, we can begin to hold multilateral negotiations for more European federalism. It will take time to hammer out the exact shape of this future \"European Union\", however.",
+        "content": [
+          "Forming a \"United States of Europe\" has long been part of the Social Democratic foreign program. Finally, we are taking steps towards it. Given our positive relations with the other countries of Europe, we can begin to hold multilateral negotiations for more European federalism. It will take time to hammer out the exact shape of this future \"European Union\", however.",
+          {
+            "type": "conditional",
+            "content": "The European Union already provides a framework for cooperation. We propose taking integration further through negotiations with European partners on shared institutions, democratic accountability, and coordinated policy. Reaching agreement will take time.",
+            "predicate": 0
+          }
+        ],
         "type": "paragraph"
-      }
+      },
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "game_over.peoples_party_achieved": {
       "id": "game_over.peoples_party_achieved",
@@ -37641,7 +37932,24 @@
     },
     "foreign_policy.european_union_2": {
       "id": "foreign_policy.european_union_2",
-      "title": "We can sign a treaty to form a European Union!",
+      "title": {
+        "content": [
+          "We can sign a treaty to form a European Union!",
+          {
+            "type": "conditional",
+            "content": "Our European partners are ready to sign an integration agreement.",
+            "predicate": 0
+          }
+        ],
+        "stateDependencies": [
+          {
+            "type": "predicate",
+            "fn": {
+              "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+            }
+          }
+        ]
+      },
       "viewIf": {
         "$code": "return (((((Q['west_relation'] || 0) >= 5) && ((Q['east_relation'] || 0) >= 4)) && ((Q['eu_progress'] || 0) >= 2)) && ((Q['eu'] || 0)===0));"
       },
@@ -37655,7 +37963,14 @@
       "content": [
         {
           "type": "paragraph",
-          "content": "Along with France, Great Britain, and many other states of Western and Eastern Europe, we have signed a treaty to form a European Union! It is hoped that Europe has learned the lessons of the First World War; never again will there be another war that tears the continent apart."
+          "content": [
+            "Along with France, Great Britain, and many other states of Western and Eastern Europe, we have signed a treaty to form a European Union! It is hoped that Europe has learned the lessons of the First World War; never again will there be another war that tears the continent apart.",
+            {
+              "type": "conditional",
+              "content": "Germany and its European partners have agreed on a new step toward closer union. The agreement strengthens cooperation across borders and creates opportunities for shared investment and economic growth. Turning the commitment into lasting progress will take continued work.",
+              "predicate": 0
+            }
+          ]
         },
         {
           "type": "paragraph",
@@ -37663,10 +37978,31 @@
         },
         {
           "type": "paragraph",
-          "content": "Fascist Italy remains a problem, and the Soviet Union also lies outside the system. But for now, there is new hope for peace and prosperity throughout the continent."
+          "content": [
+            "Fascist Italy remains a problem, and the Soviet Union also lies outside the system. But for now, there is new hope for peace and prosperity throughout the continent.",
+            {
+              "type": "conditional",
+              "content": "European cooperation still faces disagreements, and not every country is ready to take part. For now, the agreement gives us a basis for building a more peaceful and prosperous continent.",
+              "predicate": 1
+            }
+          ]
         }
       ],
-      "countVisitsMax": 1
+      "countVisitsMax": 1,
+      "stateDependencies": [
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        },
+        {
+          "type": "predicate",
+          "fn": {
+            "$code": "return ((Q['modern_scenario'] || 0) === 1 && !(Q['historical_mode'] || 0));"
+          }
+        }
+      ]
     },
     "foreign_policy": {
       "id": "foreign_policy",
