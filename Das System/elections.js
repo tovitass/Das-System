@@ -49,6 +49,31 @@
       totalWeight = ids.reduce(function (sum, id) { return sum + result[id]; }, 0) || 1;
     }
     ids.forEach(function (id) { result[id] = 100 * result[id] / totalWeight; });
+    var pollingBonuses = qualities.polling_bonuses || {};
+    var bonusTotal = ids.reduce(function (sum, id) {
+      return sum + Math.max(0, Number(pollingBonuses[id]) || 0);
+    }, 0);
+    var donorTotal = ids.reduce(function (sum, id) {
+      return sum + (Math.max(0, Number(pollingBonuses[id]) || 0) ? 0 : result[id]);
+    }, 0);
+    if (bonusTotal && donorTotal) {
+      ids.forEach(function (id) {
+        var bonus = Math.max(0, Number(pollingBonuses[id]) || 0);
+        result[id] = bonus ? result[id] + bonus : Math.max(0, result[id] - bonusTotal * result[id] / donorTotal);
+      });
+    }
+    // The Our Enemies campaign is intended to win over voters from the
+    // parties it targets. Shift a modest share from each targeted party to SPD.
+    var targets = Array.isArray(qualities.enemy_targets) ? qualities.enemy_targets : [];
+    var spdTransfer = 0;
+    targets.forEach(function (id) {
+      if (id !== "spd" && ids.indexOf(id) !== -1 && result[id] > 0) {
+        var transfer = Math.min(1.5, result[id]);
+        result[id] -= transfer;
+        spdTransfer += transfer;
+      }
+    });
+    if (ids.indexOf("spd") !== -1) result.spd += spdTransfer;
     return applyStreetEffects(result, qualities, ids);
   }
 
@@ -99,11 +124,14 @@
 
   function renderPolls(qualities) {
     var partySystem = window.partySystem;
-    var entries = pollingEntries(qualities, voteShares(qualities));
+    var rawShares = voteShares(qualities);
+    var entries = pollingEntries(qualities, rawShares);
     var shares = {};
     entries.forEach(function (entry) { shares[entry.id] = entry.share; });
+    var history = recordPollingHistory(qualities, rawShares);
     var result = allocateSeats(shares, DEFAULT_SEATS, THRESHOLD);
     var chart = window.modernParliament.renderProjection(entries, THRESHOLD, partySystem.parties);
+    var historyChart = renderPollingHistory(history, entries, partySystem);
     var sorted = entries.slice().sort(function (a, b) { return b.share - a.share; });
     function escape(value) { return String(value).replace(/[&<>"']/g, function (c) { return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" })[c]; }); }
     var rows = sorted.map(function (entry) {
@@ -111,7 +139,71 @@
       var party = partySystem.get(entry.id) || { color: "#777" };
       return '<li class="party-row"><div class="party-row-heading">' + partySystem.renderName(entry.id, entry.label) + '<span class="party-percent">' + entry.share.toFixed(1) + '%</span></div><div class="party-meter"><span style="width:' + entry.share.toFixed(2) + '%;--party-color:' + escape(party.color) + '"></span></div><div class="poll-seat-status">' + escape(status) + '</div></li>';
     }).join("");
-    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>Parties below 5% are excluded from seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul></section>';
+    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>Parties below 5% are excluded from seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul><h3>Polling over the last 12 months</h3>' + historyChart + '</section>';
+  }
+
+  function recordPollingHistory(qualities, knownShares) {
+    var shares = knownShares || voteShares(qualities);
+    var monthIndex = (Number(qualities.year) || 2017) * 12 + ((Number(qualities.month) || 1) - 1);
+    if (qualities.polling_history_version !== 2) {
+      qualities.polling_history = [];
+      qualities.polling_history_version = 2;
+      delete qualities.polling_pending;
+    }
+    var history = Array.isArray(qualities.polling_history) ? qualities.polling_history : (qualities.polling_history = []);
+    var pending = qualities.polling_pending;
+    if (pending && pending.month < monthIndex) {
+      var last = history.length && history[history.length - 1];
+      if (!last || last.month < pending.month) {
+        history.push({ month: pending.month, shares: Object.assign({}, shares) });
+      }
+    }
+    qualities.polling_pending = { month: monthIndex, shares: Object.assign({}, shares) };
+    history = history.filter(function (item) { return item.month >= monthIndex - 12 && item.month < monthIndex; });
+    qualities.polling_history = history;
+    return history;
+  }
+
+  function renderPollingHistory(history, entries, partySystem) {
+    var width = 640, height = 300, left = 44, right = 12, top = 14, bottom = 34;
+    var plotWidth = width - left - right, plotHeight = height - top - bottom;
+    var parties = entries.filter(function (entry) { return entry.id !== "other"; });
+    function shareForPoint(point, party) {
+      var values = point.shares || {};
+      if (party.id === "cdu" && party.label === "CDU + CSU") return (Number(values.cdu) || 0) + (Number(values.csu) || 0);
+      if (party.id === "ucd") return Number(values.ucd) || ((Number(values.cdu) || 0) + (Number(values.csu) || 0));
+      return Number(values[party.id]) || 0;
+    }
+    var maxShare = Math.max(20, Math.ceil(Math.max.apply(null, history.reduce(function (values, point) {
+      return values.concat(parties.map(function (party) { return shareForPoint(point, party); }));
+    }, [0])) / 10) * 10);
+    function x(index) { return left + (history.length < 2 ? plotWidth / 2 : plotWidth * index / (history.length - 1)); }
+    function y(value) { return top + plotHeight * (1 - value / maxShare); }
+    function escape(value) { return String(value).replace(/[&<>"']/g, function (c) { return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" })[c]; }); }
+    var grid = [];
+    for (var tick = 0; tick <= maxShare; tick += 10) {
+      grid.push('<line x1="' + left + '" x2="' + (width - right) + '" y1="' + y(tick) + '" y2="' + y(tick) + '" class="poll-history-grid"/><text x="' + (left - 7) + '" y="' + (y(tick) + 4) + '" text-anchor="end" class="poll-history-axis">' + tick + '%</text>');
+    }
+    var lines = parties.map(function (party) {
+      var points = history.map(function (item, index) { return [x(index), y(shareForPoint(item, party))]; });
+      var path = points.length ? 'M ' + points[0][0] + ' ' + points[0][1] : '';
+      for (var i = 1; i < points.length; i++) {
+        var mid = (points[i - 1][0] + points[i][0]) / 2;
+        path += ' C ' + mid + ' ' + points[i - 1][1] + ', ' + mid + ' ' + points[i][1] + ', ' + points[i][0] + ' ' + points[i][1];
+      }
+      var color = (partySystem.get(party.id) || {}).color || '#777';
+      return '<path d="' + path + '" fill="none" stroke="' + escape(color) + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><title>' + escape(party.label) + '</title></path>';
+    }).join('');
+    var labels = history.map(function (item, index) {
+      var month = item.month % 12;
+      var year = Math.floor(item.month / 12);
+      return '<text x="' + x(index) + '" y="' + (height - 8) + '" text-anchor="middle" class="poll-history-axis">' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][month] + ' ' + year + '</text>';
+    }).join('');
+    var legend = parties.map(function (party) {
+      var color = (partySystem.get(party.id) || {}).color || '#777';
+      return '<span class="poll-history-legend-item"><i style="background:' + escape(color) + '"></i>' + escape(party.label) + '</span>';
+    }).join('');
+    return '<div class="poll-history-wrap"><svg class="poll-history-chart" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Party polling over the last 12 months">' + grid.join('') + lines + labels + '</svg><div class="poll-history-legend">' + legend + '</div></div>';
   }
 
   function allocateSeats(shares, seatTotal, threshold) {
@@ -259,6 +351,7 @@
     startingShares: Object.assign({}, STARTING_SHARES),
     initializeScenario: initializeScenario,
     voteShares: voteShares,
+    recordPollingHistory: recordPollingHistory,
     ensureStreetState: ensureStreetState,
     renderPolls: renderPolls,
     allocateSeats: allocateSeats,

@@ -225,6 +225,13 @@ ul.choices a {
 .party-row-heading { display: flex; justify-content: space-between; gap: 1em; }
 .party-meter { height: 0.45em; background: rgba(0,0,0,.12); margin-top: .2em; }
 .party-meter span { display: block; height: 100%; background: var(--party-color); }
+.poll-history-wrap { margin: .5em 0 1.25em; }
+.poll-history-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.poll-history-grid { stroke: currentColor; stroke-opacity: .14; stroke-width: 1; }
+.poll-history-axis { fill: currentColor; font-size: 11px; opacity: .72; }
+.poll-history-legend { display: flex; flex-wrap: wrap; gap: .35em .85em; font-size: .85em; }
+.poll-history-legend-item { display: inline-flex; align-items: center; gap: .3em; }
+.poll-history-legend-item i { display: inline-block; width: .65em; height: .65em; border-radius: 50%; }
 .party-relations li { padding: .2em 0; }
 blockquote {
   margin: 1em 2em;
@@ -715,6 +722,7 @@ body.dark-mode .street-impact { border-top-color: rgba(255,255,255,.35); }
 .modern-ministry-choice:disabled { opacity: .45; cursor: default; }
 .modern-ministry-choice.selected { color: #287b35; }
 .modern-ministry-domain-note, .modern-ministry-cost-note { font-size: .8em; font-weight: 400; color: #696969; }
+.modern-ministry-domain-note { display: block; width: 100%; white-space: nowrap; }
 body.dark-mode .modern-ministry-domain-note, body.dark-mode .modern-ministry-cost-note { color: #c0c0c0; }
 .modern-ministry-progress { font-weight: 700; }
 .modern-coalition-seat-share { font-weight: 400; font-size: .82em; color: #777; }

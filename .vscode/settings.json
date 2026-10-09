@@ -3,6 +3,10 @@
         "/^python - <<'PY'\npath='/home/tovitas/Documents/Social Democracy: Das System/Das System/core\\.json'\nwith open\\(path, 'r', encoding='utf-8'\\) as f:\n    for i,line in enumerate\\(f, start=1\\):\n        if '\"root\\.start\"' in line:\n            start=i\n            print\\('start line', start\\)\n            for j in range\\(start-5, start\\+180\\):\n                if 1 <= j <= 52410:\n                    print\\(f'\\{j\\}: \\{open\\(path, encoding=\"utf-8\"\\)\\.read\\(\\)\\.splitlines\\(\\)\\[j-1\\]\\}'\\)\n            break\nPY$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python - <<'PY'\nimport json, pprint\npath='/home/tovitas/Documents/Social Democracy: Das System/Das System/core\\.json'\nwith open\\(path,'r',encoding='utf-8',errors='ignore'\\) as f:\n    data=json\\.load\\(f\\)\npp = pprint\\.PrettyPrinter\\(width=120\\)\nfor k in \\['qdisplays','qualities','scenes','actions'\\]:\n    if k in data:\n        print\\('KEY',k\\)\n        pp\\.pprint\\(list\\(data\\[k\\]\\.keys\\(\\)\\)\\[:20\\]\\)\n        if k == 'qdisplays':\n            print\\('coalition_dissent entry:'\\)\n            pp\\.pprint\\(data\\[k\\]\\.get\\('coalition_dissent'\\)\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

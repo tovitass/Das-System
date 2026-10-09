@@ -235,6 +235,12 @@
   }
 
   function updateModernCabinet(qualities, coalition, result, spdChoices) {
+    if (coalition.parts.indexOf('die_linke') !== -1) {
+      qualities.right_wing_agitation = Math.min(100, (Number(qualities.right_wing_agitation) || 0) + 20);
+    }
+    if (coalition.parts.indexOf('afd') !== -1) {
+      qualities.left_wing_militancy = Math.min(100, (Number(qualities.left_wing_militancy) || 0) + 20);
+    }
     var orderedParties = coalition.parts.slice().sort(function(a, b) {
       return (Number(result.seats[b]) || 0) - (Number(result.seats[a]) || 0);
     });
@@ -287,11 +293,13 @@
       { id:'deutschland', name:'Deutschland Coalition', parts:['cdu','csu','spd','fdp'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'kenya', name:'Kenya Coalition', parts:['cdu','csu','spd','greens'], spd:true, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'traffic', name:'Traffic Light Coalition', parts:['spd','greens','fdp'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
-      { id:'left', name:'Left Coalition', parts:['spd','greens','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
+      { id:'spd_greens', name:'Red-Green Coalition', parts:['spd','greens'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
+      { id:'spd_linke', name:'Red–Pink Coalition', parts:['spd','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
+      { id:'left', name:'Left Coalition', parts:['spd','greens','die_linke'], spd:true, warning:'Relations with the CDU/CSU and FDP will suffer severely.', chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'minority', name:'SPD Minority Government', parts:['spd'], spd:true, minority:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'jamaica', name:'Jamaica Coalition', parts:['cdu','csu','greens','fdp'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'right', name:'Right Coalition', parts:['cdu','csu','afd'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
-      { id:'bourgeoisie', name:'Bourgeoisie Coalition', parts:['fdp','cdu','csu','afd'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' }
+      { id:'bourgeoisie', name:'Bourgeoisie Coalition', parts:['fdp','cdu','csu','afd'], spd:false, chancellor:'Friedrich Merz', chancellorParty:'CDU' }
     ];
     function appendButton(parent, label, callback, className) {
       var button = document.createElement('button');
@@ -359,6 +367,11 @@
             domainNote.appendChild(partyName);
             domainNote.appendChild(document.createTextNode('.'));
             button.appendChild(domainNote);
+            var noteFontSize = parseFloat(window.getComputedStyle(domainNote).fontSize) || 12;
+            while (domainNote.scrollWidth > domainNote.clientWidth && noteFontSize > 4) {
+              noteFontSize -= 0.5;
+              domainNote.style.fontSize = noteFontSize + 'px';
+            }
           }
           button.disabled = selected || chosen.length >= maxSpdMinistries || chosenPoints + cost > ministryCount;
           if (selected) button.classList.add('selected');
@@ -385,17 +398,26 @@
       var shares=coalitionSeatShare(result,option.parts);
       var majorityPossible=option.minority || shares.seats>=majority;
       var compatible=window.partySystem.canFormCoalition(qualities,option.parts,'national');
+      var relationBlocked=option.spd && option.parts.some(function(id) {
+        return id !== 'spd' && window.partySystem.relationValue(qualities,'spd',id) <= 50;
+      });
       if (option.minority) {
         var union=(Number(result.seats.cdu)||0)+(Number(result.seats.csu)||0);
         majorityPossible=(Number(result.seats.spd)||0)>union && Object.keys(result.seats).filter(function(id){return !['spd','cdu','csu','other'].includes(id);}).every(function(id){return (Number(result.seats.spd)||0)>(Number(result.seats[id])||0);});
       }
-      var canForm=majorityPossible&&compatible;
+      if (!majorityPossible) return;
+      var canForm=majorityPossible&&compatible&&!relationBlocked;
       var card=document.createElement('button'); card.type='button'; card.className='modern-coalition-option '+(canForm?'possible':'unavailable');
-      card.disabled=!(majorityPossible&&compatible);
+      card.disabled=!canForm;
       var choice=document.createElement('span'); choice.className='modern-coalition-choice';
       choice.innerHTML='Form a <strong>'+window.partySystem.colorizeText(option.name)+'</strong>';
       card.appendChild(choice);
       card.addEventListener('click',function(){
+        if (option.id === 'left') {
+          window.partySystem.adjustRelation(qualities,'spd','cdu',-25);
+          window.partySystem.adjustRelation(qualities,'spd','csu',-25);
+          window.partySystem.adjustRelation(qualities,'spd','fdp',-25);
+        }
         qualities.government_parties=option.parts.slice(); qualities.government_type=option.name;
         qualities.chancellor=option.chancellor; qualities.chancellor_party=option.chancellorParty;
         qualities.in_grand_coalition=option.id==='grand'?1:0; qualities.in_weimar_coalition=0;
@@ -411,9 +433,14 @@
       });
       var share=document.createElement('span'); share.className='modern-coalition-seat-share';
       share.textContent=shares.percent.toFixed(1)+'% of seats'; card.appendChild(share);
+      if (option.warning) {
+        var warning=document.createElement('p'); warning.className='modern-coalition-unavailable-note';
+        warning.textContent=option.warning; card.appendChild(warning);
+      }
       if (!canForm) {
         var note=document.createElement('p'); note.className='modern-coalition-unavailable-note';
-        note.textContent=shares.seats<majority&&!option.minority?'Cannot form a parliamentary majority.':'Party compatibility prevents this coalition.';
+        note.textContent=relationBlocked?'Relations with a coalition partner must be above 50.':(!compatible?'Party compatibility prevents this coalition.':'');
+        if (!note.textContent) return;
         card.appendChild(note);
       }
       controls.appendChild(card);
@@ -428,6 +455,9 @@
       $('#qualities').empty();
       var scene = dendryUI.game.scenes[window.statusTab];
       var gameState = dendryUI.dendryEngine.state;
+      if (gameState.qualities && gameState.qualities.modern_scenario === 1 && window.electionSystem) {
+          window.electionSystem.recordPollingHistory(gameState.qualities);
+      }
       var content = document.getElementById('content');
       var oldElectionPanel = document.getElementById('main-election-parliament');
       if (oldElectionPanel) oldElectionPanel.remove();

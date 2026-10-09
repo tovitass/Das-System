@@ -257,6 +257,7 @@
     var coalitions = [
       ["Grand Coalition", "grandLabel"], ["Jamaica Coalition", "jamaicaLabel"],
       ["Kenya Coalition", "kenyaLabel"], ["Leftist Coalition", "leftistLabel"],
+      ["Left Coalition", "leftistLabel"],
       ["Right Coalition", "rightLabel"], ["Bourgeoisie Coalition", "bourgeoisieLabel"],
       ["Traffic Light Coalition", "trafficLightLabel"],
       ["Deutschland Coalition", "deutschlandLabel"],
@@ -368,6 +369,13 @@
     else if (/Jamaica Coalition/i.test(labelText)) styleType = "jamaicaLabel";
     else if (/Kenya Coalition/i.test(labelText)) styleType = (qualities.show_non_spd_coalitions ? "kenyaNoSpdLabel" : "kenyaLabel");
     else if (/Leftist Coalition/i.test(labelText)) styleType = "leftistLabel";
+    else if (/Left Coalition/i.test(labelText)) {
+      return renderLetterColoredCoalition(label, [
+        { party: "spd", letters: 4 },
+        { party: "greens", letters: 5 },
+        { party: "die_linke", letters: 4 }
+      ]);
+    }
     else if (/Right Coalition/i.test(labelText)) styleType = "rightLabel";
     else if (/Bourgeoisie Coalition/i.test(labelText)) styleType = "bourgeoisieLabel";
     else if (/Minority government/i.test(labelText)) styleType = "minorityLabel";
@@ -404,7 +412,7 @@
   }
 
   var initialRelations = {
-    die_linke: 65, greens: 65, fdp: 40, cdu: 35, csu: 30, afd: 0, other: 50
+    die_linke: 55, greens: 80, fdp: 35, cdu: 55, csu: 55, afd: 5, other: 50
   };
 
   function ensurePolitics(qualities) {
@@ -423,6 +431,29 @@
     qualities.union_alliance_active = qualities.union_alliance_active === undefined ? 1 : qualities.union_alliance_active;
     qualities.party_rightwing = qualities.party_rightwing || { cdu: 62, csu: 68, fdp: 58, ucd: 65 };
     qualities.afd_coalitions = qualities.afd_coalitions || { state: 0, national: 0 };
+    if (!qualities._coalition_dissent_scaled) {
+      var dissent = Number(qualities.coalition_dissent) || 0;
+      Object.defineProperty(qualities, "coalition_dissent", {
+        configurable: true,
+        enumerable: true,
+        get: function () { return dissent; },
+        set: function (next) {
+          next = Number(next) || 0;
+          var delta = next - dissent;
+          if (delta > 0 && Array.isArray(qualities.government_parties)) {
+            var partners = qualities.government_parties.filter(function (id) { return id !== "spd"; });
+            if (partners.length) {
+              var average = partners.reduce(function (sum, id) { return sum + relationValue(qualities, "spd", id); }, 0) / partners.length;
+              delta *= Math.max(0.5, Math.min(1, 1 - Math.max(0, average - 50) / 60));
+            }
+          }
+          dissent += delta;
+        }
+      });
+      Object.defineProperty(qualities, "_coalition_dissent_scaled", {
+        configurable: true, enumerable: false, value: 1
+      });
+    }
     if (qualities.firewall_integrity === undefined) qualities.firewall_integrity = 100;
     recalculateFirewall(qualities);
   }
@@ -854,6 +885,7 @@
     initializePartyState: initializePartyState,
     setRelation: setRelation,
     adjustRelation: adjustRelation,
+    relationValue: relationValue,
     setUnionAlliance: setUnionAlliance,
     setUnionState: setUnionState,
     adjustRightWing: adjustRightWing,
