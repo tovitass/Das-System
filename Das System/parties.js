@@ -689,6 +689,25 @@
       var colorize = window.partySystem ? window.partySystem.colorizeText : escapeHtml;
       return '<div class="main-status-row"><strong>' + colorize(label) + '</strong><span>' + colorize(value) + '</span></div>';
     }
+    function renderCurrentCrises() {
+      var currentIndex = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1);
+      var active = (Array.isArray(qualities.active_crises) ? qualities.active_crises : []).filter(function(crisis) {
+        return crisis && Number(crisis.expiresAt) >= currentIndex;
+      });
+      if (!active.length) return '<section class="party-panel current-crises"><h3>Current crises</h3><p>No active crisis is dominating the news.</p></section>';
+      var items = active.map(function(crisis) {
+        var monthsLeft = Math.max(1, Number(crisis.expiresAt) - currentIndex + 1);
+        function colorCovid(text) {
+          return escapeHtml(text).replace(/COVID[-\s]?19/gi, function(match) {
+            return '<span class="covid-term">' + match + '</span>';
+          });
+        }
+        var topic = colorCovid(crisis.topic || 'Public attention and polling are unusually sensitive to this issue.');
+        return '<li><strong>' + colorCovid(crisis.title || 'Breaking news') + '</strong><span>' + topic +
+          '</span><small>Elevated polling sensitivity · about ' + monthsLeft + ' month' + (monthsLeft === 1 ? '' : 's') + ' remaining</small></li>';
+      }).join('');
+      return '<section class="party-panel current-crises"><h3>Current crises</h3><ul class="crisis-list">' + items + '</ul></section>';
+    }
     var currentDate = (monthNames[month - 1] || (month ? String(month) : "Month not set")) + " " + (qualities.year || "Year not set");
     var electionDate = electionMonth ? (monthNames[electionMonth - 1] || electionMonth) + " " + (qualities.next_election_year || "") : "Not scheduled";
     return '<section class="party-panel main-status"><h3>Political situation</h3>' +
@@ -698,6 +717,7 @@
       row("President", president) + row("SPD position", position) +
       (Array.isArray(qualities.government_parties) && qualities.government_parties.length > 1 && qualities.government_parties.some(function(id) { return String(id).toLowerCase() === "spd"; }) ? row("Coalition dissent", (Number(qualities.coalition_dissent) || 0).toFixed(0) + "%") : "") +
       row("SPD faction dissent", (Number(qualities.dissent_percent === undefined ? (qualities.dissent || 0) : qualities.dissent_percent) || 0).toFixed(2) + "%") +
+      renderCurrentCrises() +
       '<hr><h3>Party and resources</h3>' + row("SPD polling", (shares.spd || 0).toFixed(1) + "%") +
       row("Resources available", qualities.resources === undefined ? 0 : qualities.resources) +
       '<hr><h3>Time</h3>' + row("Month / year", currentDate) +
@@ -715,7 +735,6 @@
       ["Finance Affairs", "finance_minister", "finance_minister_party"],
       ["Health Affairs", "health_minister", "health_minister_party"],
       ["Environment Affairs", "environment_minister", "environment_minister_party"],
-      ["Transport & Infrastructure Affairs", "transport_minister", "transport_minister_party"],
       ["Education & Research Affairs", "education_minister", "education_minister_party"]
     ];
     var caretakerId = String(qualities.caretaker_party || "").toLowerCase();

@@ -2,6 +2,32 @@
   var game;
   var ui;
 
+  function colorCovidMentions(root) {
+    if (!root || !document.createTreeWalker) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    var textNode;
+    while ((textNode = walker.nextNode())) {
+      if (!textNode.parentElement.closest('.covid-term') && /COVID[-\s]?19/i.test(textNode.nodeValue)) nodes.push(textNode);
+    }
+    nodes.forEach(function(node) {
+      var fragment = document.createDocumentFragment();
+      var pattern = /COVID[-\s]?19/gi;
+      var lastIndex = 0;
+      var match;
+      while ((match = pattern.exec(node.nodeValue))) {
+        if (match.index > lastIndex) fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, match.index)));
+        var term = document.createElement('span');
+        term.className = 'covid-term';
+        term.textContent = match[0];
+        fragment.appendChild(term);
+        lastIndex = pattern.lastIndex;
+      }
+      if (lastIndex < node.nodeValue.length) fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+      node.parentNode.replaceChild(fragment, node);
+    });
+  }
+
   var main = function(dendryUI) {
     ui = dendryUI;
     game = ui.game;
@@ -9,6 +35,7 @@
     var content = document.getElementById('content');
     if (content && window.MutationObserver) {
       new MutationObserver(function() {
+        colorCovidMentions(content);
         var state = ui.dendryEngine && ui.dendryEngine.state;
         if (content) {
           content.classList.toggle('startup-screen', !!state &&
@@ -18,11 +45,145 @@
           var choices = content.querySelector('ul.choices');
           if (choices) choices.remove();
         }
+        if (state && state.sceneId === '2020') {
+          var covidContinue = content.querySelectorAll('ul.choices a');
+          for (var i = 0; i < covidContinue.length; i++) {
+            if (covidContinue[i].textContent.trim() === 'Continue...') {
+              covidContinue[i].textContent = 'Gott stehe uns bei.';
+            }
+          }
+        }
       }).observe(content, { childList: true, subtree: true });
     }
 
     // Add your custom code here.
   };
+
+  var crisisAudioSnapshot = null;
+  var crisisAudioScene = null;
+  var crisisAudioFadeTimer = null;
+  var crisisBackgroundScene = null;
+  var crisisSuperEvents = {
+    '2020': { className: 'super-event-covid', background: 'img/Covid.png.jpg', audio: '../music/The Weeknd - Blinding Lights Instrumental (slowed + reverb).mp3' },
+    '2022_russian_invasion': { className: 'super-event-ukraine', background: 'img/UkraineWar.png.jpg', audio: '../music/Pink Floyd - Hey Hey Rise Up (feat. Andriy Khlyvnyuk of Boombox).mp3' },
+    '2025_iran_attack': { className: 'super-event-iran', background: 'img/International Relations.jpg' }
+  };
+
+  function setCrisisBackground(sceneId, background) {
+    var activeUI = window.dendryUI;
+    if (!activeUI || activeUI.disable_bg || typeof activeUI.setBg !== 'function') return;
+    crisisBackgroundScene = sceneId;
+    var animateBg = activeUI.animate_bg;
+    var fadeOutTime = activeUI.bg_fade_out_time;
+    var fadeInTime = activeUI.bg_fade_in_time;
+    activeUI.animate_bg = true;
+    activeUI.bg_fade_out_time = 2200;
+    activeUI.bg_fade_in_time = 1600;
+    activeUI.setBg(background);
+    activeUI.animate_bg = animateBg;
+    activeUI.bg_fade_out_time = fadeOutTime;
+    activeUI.bg_fade_in_time = fadeInTime;
+  }
+
+  function restoreCrisisBackground() {
+    if (!crisisBackgroundScene) return;
+    crisisBackgroundScene = null;
+    var activeUI = window.dendryUI;
+    if (!activeUI || activeUI.disable_bg || typeof activeUI.setBg !== 'function') return;
+    var animateBg = activeUI.animate_bg;
+    var fadeOutTime = activeUI.bg_fade_out_time;
+    var fadeInTime = activeUI.bg_fade_in_time;
+    activeUI.animate_bg = true;
+    activeUI.bg_fade_out_time = 3000;
+    activeUI.bg_fade_in_time = 2000;
+    applyThemeBackground();
+    activeUI.animate_bg = animateBg;
+    activeUI.bg_fade_out_time = fadeOutTime;
+    activeUI.bg_fade_in_time = fadeInTime;
+  }
+
+  window.endCrisisSuperEvent = function(sceneId) {
+    var eventDetails = crisisSuperEvents[sceneId];
+    if (!eventDetails || !document.body.classList.contains(eventDetails.className)) return;
+    document.body.classList.remove('super-event-covid', 'super-event-ukraine', 'super-event-iran');
+    if (crisisBackgroundScene === sceneId) restoreCrisisBackground();
+    if (crisisAudioSnapshot) stopCrisisAudio();
+  };
+
+  function fadeAudio(audio, from, to, duration, done) {
+    if (!audio) { if (done) done(); return; }
+    if (crisisAudioFadeTimer) cancelAnimationFrame(crisisAudioFadeTimer);
+    var started = Date.now();
+    function step() {
+      var progress = Math.min(1, (Date.now() - started) / duration);
+      audio.volume = Math.max(0, Math.min(1, from + (to - from) * progress));
+      if (progress < 1) crisisAudioFadeTimer = requestAnimationFrame(step);
+      else { crisisAudioFadeTimer = null; if (done) done(); }
+    }
+    step();
+  }
+
+  function startCrisisAudio(sceneId, track) {
+    var activeUI = window.dendryUI;
+    if (!activeUI || activeUI.disable_audio) return;
+    var audio = activeUI.currentAudio;
+    if (!audio) {
+      audio = new Audio();
+      activeUI.currentAudio = audio;
+    }
+    if (!crisisAudioSnapshot) {
+      crisisAudioSnapshot = {
+        src: audio.src || null,
+        url: activeUI.currentAudioURL,
+        volume: audio.volume,
+        loop: audio.loop,
+        wasPlaying: !audio.paused
+      };
+    }
+    crisisAudioScene = sceneId;
+    fadeAudio(audio, audio.volume, 0, 800, function() {
+      audio.src = new URL(track, window.location.href).href;
+      activeUI.currentAudioURL = track;
+      audio.loop = true;
+      audio.volume = 0;
+      var playResult = audio.play();
+      if (playResult && playResult.catch) playResult.catch(function() {});
+      fadeAudio(audio, 0, 0.35, 1600);
+    });
+  }
+
+  window.startCrisisSuperEvent = function(sceneId) {
+    var eventDetails = crisisSuperEvents[sceneId];
+    if (!eventDetails) return;
+    document.body.classList.remove('super-event-covid', 'super-event-ukraine', 'super-event-iran');
+    document.body.classList.add(eventDetails.className);
+    if (crisisBackgroundScene !== sceneId) setCrisisBackground(sceneId, eventDetails.background);
+    if (eventDetails.audio && crisisAudioScene !== sceneId) startCrisisAudio(sceneId, eventDetails.audio);
+  };
+
+  function stopCrisisAudio() {
+    var activeUI = window.dendryUI;
+    if (!crisisAudioSnapshot || !activeUI || !activeUI.currentAudio) return;
+    var audio = activeUI.currentAudio;
+    var previous = crisisAudioSnapshot;
+    crisisAudioSnapshot = null;
+    crisisAudioScene = null;
+    fadeAudio(audio, audio.volume, 0, 3000, function() {
+      if (previous.src) audio.src = previous.src;
+      activeUI.currentAudioURL = previous.url || null;
+      audio.loop = previous.loop;
+      if (previous.wasPlaying && !activeUI.disable_audio) {
+        audio.volume = 0;
+        var playResult = audio.play();
+        if (playResult && playResult.catch) playResult.catch(function() {});
+        fadeAudio(audio, 0, previous.volume, 1600);
+      } else {
+        audio.pause();
+        audio.volume = previous.volume;
+        if (!previous.src && activeUI.currentAudio === audio) activeUI.currentAudio = null;
+      }
+    });
+  }
 
   var TITLE = "Social Democracy: An Alternate History" + '_' + "Autumn Chen";
 
@@ -143,6 +304,9 @@
     var themeBackground = activeUI.dark_mode
       ? 'img/backround_dark.jpg'
       : 'img/backround_bright.jpg';
+    // Keep the event's cinematic backdrop while its scene is active, even
+    // when the player changes the interface color theme.
+    if (crisisBackgroundScene) return;
     activeUI.setBg(stateBackground || themeBackground);
   }
 
@@ -197,6 +361,21 @@
     var engine = window.dendryUI.dendryEngine;
     var state = engine.state;
     var scene = state.sceneId;
+    if (scene === '2020') {
+      var covidChoices = document.querySelectorAll('#content ul.choices a');
+      for (var i = 0; i < covidChoices.length; i++) {
+        if (covidChoices[i].textContent.trim() === 'Continue...') {
+          covidChoices[i].textContent = 'Gott stehe uns bei.';
+        }
+      }
+    }
+    var eventDetails = crisisSuperEvents[scene];
+    if (eventDetails) {
+      window.startCrisisSuperEvent(scene);
+    } else {
+      restoreCrisisBackground();
+      if (crisisAudioSnapshot) stopCrisisAudio();
+    }
     // Resolve every event that was available at the same monthly checkpoint
     // before allowing the player back to the normal month screen.
     if (scene === 'main' && state.qualities && Array.isArray(state.qualities.pending_event_queue) &&
@@ -224,7 +403,7 @@
   var modernMinistries = [
     ['foreign','Foreign Affairs'], ['interior','Interior Affairs'], ['justice','Justice Affairs'],
     ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance Affairs'],
-    ['health','Health Affairs'], ['environment','Environment Affairs'], ['transport','Transport/Infrastructure Affairs'],
+    ['health','Health Affairs'], ['environment','Environment Affairs'], ['defense','Defence Affairs'],
     ['education','Education/Research Affairs']
   ];
   var modernPartyLabels = {spd:'SPD',cdu:'CDU',csu:'CSU',greens:'Greens',fdp:'FDP',die_linke:'Die Linke',afd:'AfD'};
@@ -246,7 +425,7 @@
     });
     var partnerIds = coalition.parts.filter(function(id) { return id !== 'spd'; });
     var fallback = orderedParties.filter(function(id) { return id !== 'spd'; })[0] || orderedParties[0] || coalition.chancellorParty.toLowerCase();
-    var portfolioFields = {foreign:'foreign',interior:'interior',justice:'justice',labor:'labor',economic:'economic',finance:'finance',health:'health',environment:'environment',transport:'transport',education:'education'};
+    var portfolioFields = {foreign:'foreign',interior:'interior',justice:'justice',labor:'labor',economic:'economic',finance:'finance',health:'health',environment:'environment',defense:'defense',education:'education'};
     var holders = {};
     (spdChoices || []).forEach(function(key) { holders[key] = 'spd'; });
     partnerIds.forEach(function(id) {
@@ -266,10 +445,6 @@
       qualities[role + '_minister_party'] = holder;
       qualities[role + '_minister'] = label + ' minister';
     });
-    var defenseHolder = coalition.chancellorParty.toLowerCase();
-    var defenseLabel = modernPartyLabels[defenseHolder] || coalition.chancellorParty;
-    qualities.defense_minister_party = defenseHolder;
-    qualities.defense_minister = defenseLabel + ' minister';
   }
 
   function renderModernElectionControls(gameState, content) {

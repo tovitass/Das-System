@@ -136,16 +136,12 @@ header h1, header h2 {
   font-weight: normal;
   margin: 0;
   font-size: 1em;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 }
 header h1 {
   font-weight: bold;
 }
-header h2::before {
-  content: "by";
-  font-style: italic;
-  padding: 0 0.3em 0 0;
-}
-
 #content #read-marker {
   border: none;
   border-top: 1px solid var(--border-color);
@@ -361,6 +357,99 @@ blockquote + blockquote.attribution {
 #bg1 {
     z-index: -99;
 }
+
+/* Super events take over the page until the player continues. */
+body.super-event-covid #stats_sidebar,
+body.super-event-ukraine #stats_sidebar {
+  display: none;
+}
+body.super-event-covid #content,
+body.super-event-ukraine #content {
+  box-sizing: border-box;
+  width: calc(100% - 2rem);
+  max-width: 48rem;
+  margin: 2rem auto;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  text-align: center;
+  background: rgba(248, 246, 238, 0.96);
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.42);
+}
+body.super-event-covid #content h1,
+body.super-event-ukraine #content h1 {
+  opacity: 0;
+  transform: translateY(0.6rem);
+  animation: super-event-text-arrives 1.1s ease-out 0.2s forwards;
+}
+body.super-event-covid #content > p,
+body.super-event-ukraine #content > p {
+  max-width: 40rem;
+  margin: 0 auto 1.15rem;
+  line-height: 1.8;
+  text-indent: 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(0.6rem);
+  animation: super-event-text-arrives 1.1s ease-out forwards;
+}
+body.super-event-covid #content > p:nth-of-type(1),
+body.super-event-ukraine #content > p:nth-of-type(1) {
+  font-size: 1.16em;
+  font-weight: 700;
+  animation-delay: 1.5s;
+}
+body.super-event-covid #content > p:nth-of-type(2),
+body.super-event-ukraine #content > p:nth-of-type(2) { animation-delay: 3s; }
+body.super-event-covid #content > p:nth-of-type(3),
+body.super-event-ukraine #content > p:nth-of-type(3) { animation-delay: 4.5s; }
+body.super-event-covid #content > p:nth-of-type(4),
+body.super-event-ukraine #content > p:nth-of-type(4) { animation-delay: 6s; }
+body.super-event-covid #content > ul.choices,
+body.super-event-ukraine #content > ul.choices {
+  visibility: hidden;
+  animation: super-event-continue-arrives 0s linear 7.4s forwards;
+}
+@keyframes super-event-text-arrives {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes super-event-continue-arrives {
+  to { visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.super-event-covid #content h1,
+  body.super-event-covid #content > p,
+  body.super-event-ukraine #content h1,
+  body.super-event-ukraine #content > p {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  body.super-event-covid #content > ul.choices,
+  body.super-event-ukraine #content > ul.choices {
+    visibility: visible;
+    animation: none;
+  }
+}
+
+.current-crises {
+    margin-top: 1rem;
+}
+.covid-term { color: #00695c; font-weight: 700; }
+body.dark-mode .covid-term { color: #48c6ad; }
+.afd-term { color: #1769aa; font-weight: 700; }
+.crisis-list {
+    list-style: none;
+    margin: .5rem 0 0;
+    padding: 0;
+}
+.crisis-list li {
+    display: grid;
+    gap: .2rem;
+    padding: .6rem 0;
+    border-top: 1px solid var(--border-color);
+}
+.crisis-list li:first-child { border-top: 0; }
+.crisis-list li > span, .crisis-list li > small { font-size: .82em; }
+.crisis-list li > small { opacity: .75; }
 
 ul.decks, ul.hand, ul.pinned-cards {
   list-style: none;

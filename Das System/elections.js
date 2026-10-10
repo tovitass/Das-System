@@ -62,6 +62,19 @@
         result[id] = bonus ? result[id] + bonus : Math.max(0, result[id] - bonusTotal * result[id] / donorTotal);
       });
     }
+    // Active crisis topics can move opinion between polling checkpoints. Their
+    // modest, explicit shifts affect projections while the issue is in play.
+    if (!qualities.historical_mode && Array.isArray(qualities.active_crises)) {
+      var currentMonth = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1);
+      qualities.active_crises.forEach(function(crisis) {
+        if (!crisis || Number(crisis.expiresAt) < currentMonth || !crisis.polling) return;
+        Object.keys(crisis.polling).forEach(function(id) {
+          if (ids.indexOf(id) !== -1) result[id] = Math.max(0, (result[id] || 0) + (Number(crisis.polling[id]) || 0));
+        });
+      });
+      var crisisTotal = ids.reduce(function(sum, id) { return sum + (result[id] || 0); }, 0) || 1;
+      ids.forEach(function(id) { result[id] = 100 * (result[id] || 0) / crisisTotal; });
+    }
     // The Our Enemies campaign is intended to win over voters from the
     // parties it targets. Shift a modest share from each targeted party to SPD.
     var targets = Array.isArray(qualities.enemy_targets) ? qualities.enemy_targets : [];
