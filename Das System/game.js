@@ -28,9 +28,59 @@
     });
   }
 
+  function updateEventContinueLabel(sceneId, root) {
+    var labels = {
+      '2020': 'Gott stehe uns bei.',
+      '2022_russian_invasion': 'Slava Ukraini! Heroyam Slava!'
+    };
+    var label = labels[sceneId];
+    if (!label || !root) return;
+    var choices = root.querySelectorAll('ul.choices a');
+    for (var i = 0; i < choices.length; i++) {
+      if (choices[i].textContent.trim() === 'Continue...') choices[i].textContent = label;
+    }
+  }
+
   var main = function(dendryUI) {
     ui = dendryUI;
     game = ui.game;
+    musicVolume = readVolumeSetting('das_system_music_volume', 0.35);
+    soundEffectsVolume = readVolumeSetting('das_system_sound_effects_volume', 0.5);
+    bindMusicAudio(ui);
+
+    var originalDisplayContent = ui.displayContent;
+    ui.displayContent = function() {
+      var state = this.dendryEngine && this.dendryEngine.state;
+      var isSuperEvent = state && crisisSuperEvents[state.sceneId];
+      if (!isSuperEvent) return originalDisplayContent.apply(this, arguments);
+
+      window.startCrisisSuperEvent(state.sceneId);
+      var content = document.getElementById('content');
+      var previousVisibility = content.style.visibility;
+      var previousAnimationSetting = this.animate;
+      content.style.visibility = 'hidden';
+      this.animate = false;
+      try {
+        return originalDisplayContent.apply(this, arguments);
+      } finally {
+        this.animate = previousAnimationSetting;
+        requestAnimationFrame(function() {
+          content.style.visibility = previousVisibility;
+        });
+      }
+    };
+
+    document.addEventListener('click', function() {
+      if (!clickAudio) {
+        clickAudio = new Audio('music/mouse-click.mp3');
+        clickAudio.preload = 'auto';
+      }
+      if (soundEffectsVolume <= 0) return;
+      clickAudio.volume = soundEffectsVolume;
+      clickAudio.currentTime = 0;
+      var playResult = clickAudio.play();
+      if (playResult && playResult.catch) playResult.catch(function() {});
+    }, true);
 
     var content = document.getElementById('content');
     if (content && window.MutationObserver) {
@@ -45,14 +95,7 @@
           var choices = content.querySelector('ul.choices');
           if (choices) choices.remove();
         }
-        if (state && state.sceneId === '2020') {
-          var covidContinue = content.querySelectorAll('ul.choices a');
-          for (var i = 0; i < covidContinue.length; i++) {
-            if (covidContinue[i].textContent.trim() === 'Continue...') {
-              covidContinue[i].textContent = 'Gott stehe uns bei.';
-            }
-          }
-        }
+        if (state) updateEventContinueLabel(state.sceneId, content);
       }).observe(content, { childList: true, subtree: true });
     }
 
@@ -63,11 +106,54 @@
   var crisisAudioScene = null;
   var crisisAudioFadeTimer = null;
   var crisisBackgroundScene = null;
+  var musicVolume = 0.35;
+  var soundEffectsVolume = 0.5;
+  var clickAudio = null;
+  var nativeVolume = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'volume');
   var crisisSuperEvents = {
-    '2020': { className: 'super-event-covid', background: 'img/Covid.png.jpg', audio: '../music/The Weeknd - Blinding Lights Instrumental (slowed + reverb).mp3' },
-    '2022_russian_invasion': { className: 'super-event-ukraine', background: 'img/UkraineWar.png.jpg', audio: '../music/Pink Floyd - Hey Hey Rise Up (feat. Andriy Khlyvnyuk of Boombox).mp3' },
+    '2020': { className: 'super-event-covid', background: 'img/Covid.png.jpg', audio: 'music/The Weeknd - Blinding Lights Instrumental (slowed + reverb).mp3' },
+    '2022_russian_invasion': { className: 'super-event-ukraine', background: 'img/UkraineWar.png.jpg', audio: 'music/Pink Floyd - Hey Hey Rise Up (feat. Andriy Khlyvnyuk of Boombox).mp3' },
     '2025_iran_attack': { className: 'super-event-iran', background: 'img/International Relations.jpg' }
   };
+
+  function readVolumeSetting(key, fallback) {
+    try {
+      var value = Number(localStorage.getItem(key));
+      return isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function saveVolumeSetting(key, value) {
+    try { localStorage.setItem(key, String(value)); } catch (error) {}
+  }
+
+  function bindMusicVolume(audio) {
+    if (!audio || audio._dasSystemMusicVolumeBound || !nativeVolume) return;
+    var desiredVolume = audio.volume;
+    Object.defineProperty(audio, 'volume', {
+      configurable: true,
+      get: function() { return desiredVolume; },
+      set: function(value) {
+        desiredVolume = Math.max(0, Math.min(1, Number(value) || 0));
+        nativeVolume.set.call(this, desiredVolume * musicVolume);
+      }
+    });
+    audio._dasSystemMusicVolumeBound = true;
+    audio.volume = desiredVolume;
+  }
+
+  function bindMusicAudio(activeUI) {
+    if (!activeUI || activeUI._dasSystemAudioBound) return;
+    var originalAudio = activeUI.audio;
+    activeUI.audio = function() {
+      var result = originalAudio.apply(this, arguments);
+      bindMusicVolume(this.currentAudio);
+      return result;
+    };
+    activeUI._dasSystemAudioBound = true;
+  }
 
   function setCrisisBackground(sceneId, background) {
     var activeUI = window.dendryUI;
@@ -131,6 +217,7 @@
       audio = new Audio();
       activeUI.currentAudio = audio;
     }
+    bindMusicVolume(audio);
     if (!crisisAudioSnapshot) {
       crisisAudioSnapshot = {
         src: audio.src || null,
@@ -342,6 +429,26 @@
     } else {
         $('#light_mode')[0].checked = true;
     }
+    $('#music_volume').val(musicVolume);
+    $('#music_volume_value').text(Math.round(musicVolume * 100) + '%');
+    $('#sound_effects_volume').val(soundEffectsVolume);
+    $('#sound_effects_volume_value').text(Math.round(soundEffectsVolume * 100) + '%');
+  };
+
+  window.setMusicVolume = function(value) {
+    musicVolume = Math.max(0, Math.min(1, Number(value) || 0));
+    saveVolumeSetting('das_system_music_volume', musicVolume);
+    bindMusicVolume(window.dendryUI && window.dendryUI.currentAudio);
+    if (window.dendryUI && window.dendryUI.currentAudio) {
+      window.dendryUI.currentAudio.volume = window.dendryUI.currentAudio.volume;
+    }
+    $('#music_volume_value').text(Math.round(musicVolume * 100) + '%');
+  };
+
+  window.setSoundEffectsVolume = function(value) {
+    soundEffectsVolume = Math.max(0, Math.min(1, Number(value) || 0));
+    saveVolumeSetting('das_system_sound_effects_volume', soundEffectsVolume);
+    $('#sound_effects_volume_value').text(Math.round(soundEffectsVolume * 100) + '%');
   };
 
   // This function allows you to modify the text before it's displayed.
@@ -361,14 +468,7 @@
     var engine = window.dendryUI.dendryEngine;
     var state = engine.state;
     var scene = state.sceneId;
-    if (scene === '2020') {
-      var covidChoices = document.querySelectorAll('#content ul.choices a');
-      for (var i = 0; i < covidChoices.length; i++) {
-        if (covidChoices[i].textContent.trim() === 'Continue...') {
-          covidChoices[i].textContent = 'Gott stehe uns bei.';
-        }
-      }
-    }
+    updateEventContinueLabel(scene, document.getElementById('content'));
     var eventDetails = crisisSuperEvents[scene];
     if (eventDetails) {
       window.startCrisisSuperEvent(scene);

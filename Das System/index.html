@@ -6,15 +6,15 @@
     <meta prefix="ifiction: http://babel.ifarchive.org/protocol/iFiction/"
         property="ifiction:ifid" content="7FCDF039-2B77-4179-B795-CBAFA65253AA">
     <title>Social Democracy: Das System — Original game by Autumn Chen, mod by Tovitas</title>
-    <link rel="stylesheet" type="text/css" href="game.css?v=30">
+    <link rel="stylesheet" type="text/css" href="game.css?v=35">
     <script src="jquery-1.11.1.min.js"></script>
     <script src="d3.v7.min.js"></script>
     <script src="d3-linegraph.js"></script>
-    <script src="parties.js?v=34"></script>
+    <script src="parties.js?v=37"></script>
     <script src="elections.js?v=6"></script>
     <script src="parliament.js?v=7"></script>
-    <script src="core.js?v=68"></script>
-    <script src="game.js?v=28"></script>
+    <script src="core.js?v=69"></script>
+    <script src="game.js?v=31"></script>
   </head>
   <body>
     <div class="background" id="bg2">
@@ -103,6 +103,22 @@
                     <td>
                         <input type="radio" id="audio_no" name="audio" value="0" onclick="window.disableAudio();">
                     </td>
+                </tr>
+                <tr>
+                    <td colspan="5"> <hr> </td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="sound-settings-heading">Sound settings</td>
+                </tr>
+                <tr>
+                    <td><label for="music_volume">Music volume</label></td>
+                    <td colspan="3"><input type="range" id="music_volume" min="0" max="1" step="0.01" oninput="window.setMusicVolume(this.value);"></td>
+                    <td><output id="music_volume_value">35%</output></td>
+                </tr>
+                <tr>
+                    <td><label for="sound_effects_volume">Sound effects volume</label></td>
+                    <td colspan="3"><input type="range" id="sound_effects_volume" min="0" max="1" step="0.01" oninput="window.setSoundEffectsVolume(this.value);"></td>
+                    <td><output id="sound_effects_volume_value">50%</output></td>
                 </tr>
                 <tr>
                     <td colspan="5"> <hr> </td>

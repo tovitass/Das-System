@@ -63,7 +63,7 @@
       "id": "2020",
       "type": "scene",
       "title": "COVID-19: The Storm Arrives",
-      "subtitle": "January 2020 — the pandemic reaches Germany",
+      "subtitle": "February 2020 — the pandemic reaches Germany",
       "onArrival": [
         {
           "$code": "if (Array.isArray(Q.pending_event_queue)) { Q.pending_event_queue = Q.pending_event_queue.filter(function(id) { return id !== \"2020\"; }); }"
@@ -90,7 +90,7 @@
         "event"
       ],
       "viewIf": {
-        "$code": "return ((Q.year || 0) === 2020 && (Q.month || 0) === 1);"
+        "$code": "return ((Q.year || 0) === 2020 && (Q.month || 0) === 2);"
       },
       "priority": 2,
       "maxVisits": 1,
@@ -51808,7 +51808,7 @@
           {
             "type": "paragraph",
             "content": [
-              { "type": "emphasis-2", "content": "The old order is over. Russia has launched a full-scale invasion of Ukraine. Europe is at war again—and nothing can return to the way it was." }
+              { "type": "emphasis-2", "content": "The old order is over. Russia has launched a full-scale invasion of Ukraine. Nothing can return to the way it was." }
             ]
           },
           {
@@ -51821,7 +51821,7 @@
           },
           {
             "type": "paragraph",
-            "content": "The government announces a Zeitenwende in security policy. The SPD must balance solidarity with Ukraine, economic protection, and public support. The AfD tries to turn anger over prices and uncertainty into votes."
+            "content": "The government announces a \"Zeitenwende\", a Turning point, in security policy. The SPD must balance solidarity with Ukraine, economic protection, and public support. The AfD tries to turn anger over prices and uncertainty into votes."
           }
         ]
     },

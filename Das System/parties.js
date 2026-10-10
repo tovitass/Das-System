@@ -694,19 +694,33 @@
       var active = (Array.isArray(qualities.active_crises) ? qualities.active_crises : []).filter(function(crisis) {
         return crisis && Number(crisis.expiresAt) >= currentIndex;
       });
-      if (!active.length) return '<section class="party-panel current-crises"><h3>Current crises</h3><p>No active crisis is dominating the news.</p></section>';
+      if (!active.length) return '<section class="party-panel current-crises"><h3>Current crises:</h3><p>No active crisis is dominating the news.</p></section>';
       var items = active.map(function(crisis) {
         var monthsLeft = Math.max(1, Number(crisis.expiresAt) - currentIndex + 1);
-        function colorCovid(text) {
-          return escapeHtml(text).replace(/COVID[-\s]?19/gi, function(match) {
-            return '<span class="covid-term">' + match + '</span>';
-          });
+        function colorFlagWord(word, flag) {
+          var letters = Array.from(word);
+          var colors = flag === 'russia' ? ['white', 'blue', 'red'] : ['blue', 'yellow'];
+          var baseLength = Math.floor(letters.length / colors.length);
+          var remainder = letters.length % colors.length;
+          var offset = 0;
+          return colors.map(function(color, index) {
+            var length = baseLength + (index === 0 ? remainder : 0);
+            var text = letters.slice(offset, offset + length).map(escapeHtml).join('');
+            offset += length;
+            return text ? '<span class="flag-letter flag-' + flag + '-' + color + '">' + text + '</span>' : '';
+          }).join('');
         }
-        var topic = colorCovid(crisis.topic || 'Public attention and polling are unusually sensitive to this issue.');
-        return '<li><strong>' + colorCovid(crisis.title || 'Breaking news') + '</strong><span>' + topic +
-          '</span><small>Elevated polling sensitivity · about ' + monthsLeft + ' month' + (monthsLeft === 1 ? '' : 's') + ' remaining</small></li>';
+        function colorCrisisReferences(text) {
+          return escapeHtml(text)
+            .replace(/COVID[-\s]?19/gi, '<span class="covid-term">$&</span>')
+            .replace(/\b(Russia|Russian)\b/gi, function(word) { return colorFlagWord(word, 'russia'); })
+            .replace(/\bUkraine\b/gi, function(word) { return colorFlagWord(word, 'ukraine'); });
+        }
+        var topic = colorCrisisReferences(crisis.topic || 'Public attention and polling are unusually sensitive to this issue.');
+        return '<li><div class="crisis-heading"><strong>' + colorCrisisReferences(crisis.title || 'Breaking news') +
+          '</strong><small>(' + monthsLeft + ' month' + (monthsLeft === 1 ? '' : 's') + ' remaining)</small></div><span>' + topic + '</span></li>';
       }).join('');
-      return '<section class="party-panel current-crises"><h3>Current crises</h3><ul class="crisis-list">' + items + '</ul></section>';
+      return '<section class="party-panel current-crises"><h3>Current crises:</h3><ul class="crisis-list">' + items + '</ul></section>';
     }
     var currentDate = (monthNames[month - 1] || (month ? String(month) : "Month not set")) + " " + (qualities.year || "Year not set");
     var electionDate = electionMonth ? (monthNames[electionMonth - 1] || electionMonth) + " " + (qualities.next_election_year || "") : "Not scheduled";
