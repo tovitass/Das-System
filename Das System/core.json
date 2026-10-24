@@ -631,51 +631,330 @@
     },
     "library.menu": {
       "id": "library.menu",
+      "newPage": true,
       "options": [
         {
-          "id": "@library.government",
-          "title": "Germany's system of government"
+          "id": "@library.modern.section.republic",
+          "title": "The Federal Republic",
+          "viewIf": {
+            "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.weimar_timeline",
-          "title": "Timeline of the Weimar Republic before 2017"
+          "id": "@library.modern.section.parties",
+          "title": "Parties and the SPD",
+          "viewIf": {
+            "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.curr_gov",
-          "title": "Current government details"
+          "id": "@library.modern.section.elections",
+          "title": "Voters and elections",
+          "viewIf": {
+            "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.demographics",
-          "title": "Demographics"
+          "id": "@library.modern.section.model",
+          "title": "Events and game model",
+          "viewIf": {
+            "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.parties",
-          "title": "Parties"
+          "id": "@library.section.republic",
+          "title": "Republic and institutions",
+          "viewIf": {
+            "$code": "return Q.modern_scenario !== 1 || !!Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.public_opinion",
-          "title": "Public opinion (and projected election results)"
+          "id": "@library.section.society",
+          "title": "Society and elections",
+          "viewIf": {
+            "$code": "return Q.modern_scenario !== 1 || !!Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.paramilitaries",
-          "title": "Paramilitary groups"
+          "id": "@library.section.parties",
+          "title": "Parties and political forces",
+          "viewIf": {
+            "$code": "return Q.modern_scenario !== 1 || !!Q.historical_mode;"
+          }
         },
         {
-          "id": "@library.factions",
-          "title": "Internal factions"
-        },
-        {
-          "id": "@library.figures",
-          "title": "Figures and charts"
+          "id": "@library.section.data",
+          "title": "Figures and charts",
+          "viewIf": {
+            "$code": "return Q.modern_scenario !== 1 || !!Q.historical_mode;"
+          }
         },
         {
           "id": "@backSpecialScene",
-          "title": "Exit library."
+          "title": "Return to the game"
         }
       ],
       "content": {
-        "content": "",
-        "type": "paragraph"
+        "content": [
+          {
+            "type": "heading",
+            "content": "The Library"
+          },
+          {
+            "type": "paragraph",
+            "content": "Reference notes on Germany’s institutions, parties, elections, and the forces shaping political change. Choose a collection to explore."
+          }
+        ]
+      }
+    },
+    "library.section.republic": {
+      "id": "library.section.republic",
+      "newPage": true,
+      "options": [
+        { "id": "@library.government", "title": "How the republic is governed" },
+        { "id": "@library.weimar_timeline", "title": "Historical timeline" },
+        { "id": "@library.curr_gov", "title": "Current government and cabinet" },
+        { "id": "@library.menu", "title": "Back to all sections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Republic and institutions" },
+          { "type": "paragraph", "content": "Explore the constitutional system, the historical timeline, and the current government."
+          }
+        ]
+      }
+    },
+    "library.section.society": {
+      "id": "library.section.society",
+      "newPage": true,
+      "options": [
+        { "id": "@library.demographics", "title": "Population and social groups" },
+        { "id": "@library.public_opinion", "title": "Public opinion and election projections" },
+        { "id": "@library.menu", "title": "Back to all sections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Society and elections" },
+          { "type": "paragraph", "content": "Review the electorate and follow public opinion and projected election results."
+          }
+        ]
+      }
+    },
+    "library.section.parties": {
+      "id": "library.section.parties",
+      "newPage": true,
+      "options": [
+        { "id": "@library.parties", "title": "Political parties" },
+        { "id": "@library.factions", "title": "SPD factions" },
+        { "id": "@library.paramilitaries", "title": "Historical street organizations" },
+        { "id": "@library.menu", "title": "Back to all sections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Parties and political forces" },
+          { "type": "paragraph", "content": "Read about the parties, the SPD’s internal currents, and the street organizations of the historical scenario."
+          }
+        ]
+      }
+    },
+    "library.section.data": {
+      "id": "library.section.data",
+      "newPage": true,
+      "options": [
+        { "id": "@library.figures", "title": "Charts and historical records" },
+        { "id": "@library.menu", "title": "Back to all sections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Figures and charts" },
+          { "type": "paragraph", "content": "Explore election composition, support over time, and economic indicators."
+          }
+        ]
+      }
+    },
+    "library.modern.section.republic": {
+      "id": "library.modern.section.republic",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.government", "title": "How the Federal Republic works" },
+        { "id": "@library.menu", "title": "Back to all collections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "The Federal Republic" },
+          { "type": "paragraph", "content": "Germany in 2017 is a federal parliamentary democracy. Learn how the Bundestag, Chancellor, coalition government, and presidency fit together—and which parts the game models." }
+        ]
+      }
+    },
+    "library.modern.section.parties": {
+      "id": "library.modern.section.parties",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.parties", "title": "The parties in the 2017 scenario" },
+        { "id": "@library.modern.factions", "title": "SPD factions and internal balance" },
+        { "id": "@library.menu", "title": "Back to all collections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Parties and the SPD" },
+          { "type": "paragraph", "content": "The scenario begins with a Grand Coalition and a crowded party system. Compare the parties available in the game and see how the SPD’s internal balance is represented." }
+        ]
+      }
+    },
+    "library.modern.section.elections": {
+      "id": "library.modern.section.elections",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.voters", "title": "Voters, polling, and election projections" },
+        { "id": "@library.menu", "title": "Back to all collections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Voters and elections" },
+          { "type": "paragraph", "content": "Campaign choices, social-group support, polling adjustments, and the 5% threshold turn political support into a projected Bundestag." }
+        ]
+      }
+    },
+    "library.modern.section.model": {
+      "id": "library.modern.section.model",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.pressures", "title": "Events, policy, and political pressure" },
+        { "id": "@library.modern.firewall", "title": "The democratic firewall: background math" },
+        { "id": "@library.menu", "title": "Back to all collections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Events and game model" },
+          { "type": "paragraph", "content": "The story uses real political institutions and contemporary issues as its setting, then turns your decisions into a playable alternate history. These entries explain the assumptions and calculations behind that model." }
+        ]
+      }
+    },
+    "library.modern.government": {
+      "id": "library.modern.government",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.republic", "title": "Back to The Federal Republic" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "How the Federal Republic works" },
+          { "type": "paragraph", "content": "Germany is a federal parliamentary republic. Voters elect the Bundestag; a Chancellor leads the federal government and must command parliamentary support. The Federal President is elected by the Federal Convention, not by a nationwide popular vote, and chiefly performs representative and constitutional duties." },
+          { "type": "paragraph", "content": "At the start of this alternate-history scenario, Angela Merkel leads a CDU/CSU–SPD Grand Coalition. Frank-Walter Steinmeier is Federal President. The 2017 election puts the coalition, the SPD’s role in government, and the next Chancellor in play." },
+          { "type": "paragraph", "content": "After the election, the game converts the projected result into 598 seats and offers coalition choices. A coalition needs more than half of those seats to govern; the government-formation scenes then determine whether the SPD joins, leads, or stays outside a cabinet. A minority government can instead rely on a party that promises to tolerate it without taking ministerial posts. Portfolio choices assign ministries to coalition partners." },
+          { "type": "paragraph", "content": "This is a deliberate simplification of the real Bundestag: the model fixes its size at 598 seats and does not reproduce constituency-seat exceptions, overhang seats, or the extra leveling seats that made the actual 2017 Bundestag larger. Coalition labels and later outcomes are branches of the game, not claims about what happened in real history." }
+        ]
+      }
+    },
+    "library.modern.parties": {
+      "id": "library.modern.parties",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.parties", "title": "Back to Parties and the SPD" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "The parties in the 2017 scenario" },
+          { "type": "paragraph", "content": "The starting roster is SPD, CDU, CSU, Greens, FDP, Die Linke, AfD, and Other. “Other” is an aggregate for smaller parties, not a single party that can take seats or join a coalition. The CDU and CSU are separate entries in the polling model but normally campaign and negotiate together as the Union." },
+          { "type": "paragraph", "content": "The SPD is the social-democratic party at the centre of the story. It begins in government with the Union, so the campaign is also a choice about whether to defend the Grand Coalition’s record or draw a clearer alternative. The events put jobs, social security, public investment, climate transition, education, research, and democratic renewal among the issues on which the party must establish a credible programme." },
+          { "type": "paragraph", "content": "The CDU is the Christian-democratic, conservative party led by Chancellor Angela Merkel; its Bavarian sister party is the CSU. The Greens are a distinct potential coalition partner: the game’s “Jamaica” option brings them together with the Union and FDP, while a “Traffic Light” option joins them with the SPD and FDP. Die Linke is the socialist left party and can join the SPD and Greens in the game’s Leftist Coalition." },
+          { "type": "paragraph", "content": "The FDP is the liberal party and a possible partner in both the Jamaica and Traffic Light arrangements. The AfD is a nationalist, right-wing populist party whose growth creates a central democratic challenge in the scenario. Its support, the ideological balance of other right-of-centre parties, street conditions, and past coalition choices all feed the game’s democratic-firewall measure; see the background-math entry for the formula." },
+          { "type": "paragraph", "content": "Coalition names and government paths are game mechanics, not a fixed forecast. Seat arithmetic determines which combinations have a majority, while policy and institutional choices determine what those combinations mean for the SPD." }
+        ]
+      }
+    },
+    "library.modern.factions": {
+      "id": "library.modern.factions",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.parties", "title": "Back to Parties and the SPD" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "SPD factions and internal balance" },
+          { "type": "paragraph", "content": "The game maps three contemporary SPD currents onto its existing strength and dissent tracks. The Seeheimer Kreis is moderate, centrist, and market-friendly, and favours pragmatic reform. The Parlamentarische Linke (Parliamentary Left) favours Keynesian policy, a strong welfare state, and worker protections. Netzwerk Berlin is reformist and centrist-left, advocating a modernized social democracy; its positions and members can overlap with the Seeheim Circle." },
+          { "type": "paragraph", "content": "Faction strength is calculated from the underlying tracks, then normalized so the three displayed strengths total 100%. In track notation: Seeheimer = center_strength + 0.5 × reformist_strength; Parliamentary Left = left_strength + labor_strength; Netzwerk Berlin = 0.5 × reformist_strength + neorevisionist_strength. Negative track strength contributes zero. If all three totals are zero, each faction is shown at one third." },
+          { "type": "paragraph", "content": "Each faction’s dissent is the strength-weighted mean of the dissent values on its tracks (using the same 1 or 0.5 track weights). Thus a large faction has more influence on its own displayed dissent than a small supporting track. The overall dissent and party choices represent internal pressure on leadership; they are not separate parties or vote shares." }
+        ]
+      }
+    },
+    "library.modern.voters": {
+      "id": "library.modern.voters",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.elections", "title": "Back to Voters and elections" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Voters, polling, and election projections" },
+          { "type": "paragraph", "content": "The model tracks support across six overlapping voter groups—workers, the old and new middle classes, rural voters, unemployed voters, and Catholics. These are broad simulation categories, not mutually exclusive census populations. Group sizes and party preferences are game values that campaign choices and events can change." },
+          { "type": "paragraph", "content": "For each group, party preferences are first normalized to that group’s total. The national share for a party is the sum of its normalized group support weighted by each group’s size, divided by the total size of groups with valid preference data. In symbols: party share = 100 × Σ(group size × party preference / group preference total) ÷ Σ(group size). At the opening, every group starts with the same party preference profile, so this weighting reproduces the starting profile until choices begin to move group support." },
+          { "type": "paragraph", "content": "The opening polling profile is Die Linke 9.2%, Greens 8.9%, SPD 20.5%, FDP 10.7%, CDU 26.8%, CSU 6.1%, AfD 12.6%, and Other 5.2%. For coalition-level polling and the threshold, CDU and CSU are combined as CDU/CSU (32.9%). This is a scenario baseline, not a promise that the real election or a later in-game poll will have these numbers." },
+          { "type": "paragraph", "content": "Election projections exclude individual parties below 5%; Other is an aggregate and never qualifies as a party. The eligible shares are renormalized, then allocated across 598 seats. Each party first receives the whole-number floor of its proportional seat entitlement; remaining seats go to the parties with the largest fractional remainders. The qualifying CDU and CSU shares count together for their Union entry. Small share changes can therefore have a larger seat effect near the threshold." },
+          { "type": "paragraph", "content": "The displayed monthly projection can also include campaign polling bonuses, temporary issue shifts from active crises, and street-climate effects. A saved monthly sampling jiggle may transfer up to 0.5 percentage points between two parties, with a 50% chance of a transfer for that month; it is stored so reopening the panel does not reroll it. The polling-history chart records the previous 12 months, not a long-run historical series." }
+        ]
+      }
+    },
+    "library.modern.pressures": {
+      "id": "library.modern.pressures",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.model", "title": "Back to Events and game model" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "Events, policy, and political pressure" },
+          { "type": "paragraph", "content": "The opening situation is an election year: Merkel’s CDU/CSU–SPD coalition governs, while Martin Schulz leads the SPD campaign. Early choices ask whether to defend the government’s record, present a sharper social-democratic alternative, or prepare to rebuild in opposition. The expected Bundestag election is in September 2017." },
+          { "type": "paragraph", "content": "The later event text develops recurring pressures on the Federal Republic: employment and secure work, social protection, investment and economic change, education and research, climate policy, migration and integration, public safety, and democratic resilience. These events are written as alternate-history choices. Their dialogue supplies the political context; their scripted effects change the game’s underlying variables." },
+          { "type": "paragraph", "content": "Most numerical values are abstract simulation points, not euros, headcounts, or measured real-world percentages. A choice may move an economic, party, coalition, or street-pressure track by a stated amount; subsequent events and modifiers can change how consequential that move is. Polling changes are percentages, while seat counts are derived from the threshold and proportional-allocation calculation described in “Voters, polling, and election projections.”" },
+          { "type": "paragraph", "content": "The modern scenario also models political street climate. Grassroots mobilization and right-wing agitation create a capped polling swing: clamp((mobilization − agitation) / 25, −2, +2) percentage points before shares are renormalized. Left-wing militancy above 35 adds a backlash of 0.025 points per point above 35. A one-sided approach to the Verfassungsschutz focus can also affect the relevant polling and police-loyalty tracks. These abstractions represent political pressure, not a literal count of demonstrations or votes." }
+        ]
+      }
+    },
+    "library.modern.firewall": {
+      "id": "library.modern.firewall",
+      "newPage": true,
+      "viewIf": {
+        "$code": "return Q.modern_scenario === 1 && !Q.historical_mode;"
+      },
+      "options": [
+        { "id": "@library.modern.section.model", "title": "Back to Events and game model" }
+      ],
+      "content": {
+        "content": [
+          { "type": "heading", "content": "The democratic firewall: background math" },
+          { "type": "paragraph", "content": "Firewall integrity is a 0–100 game score, not a constitutional rating or a prediction. It begins at 100 and loses points for electoral pressure, the ideological balance of the right-of-centre bloc, earlier AfD coalition agreements, and—in the modern scenario—street pressure. A lower score means the game treats democratic norms as more exposed." },
+          { "type": "paragraph", "content": "The calculation is: clamp(round(100 − AfD pressure − right-bloc pressure − state-coalition penalties − national-coalition penalties − street pressure), 0, 100). AfD pressure is min(25, 0.8 × AfD polling share). Right-bloc pressure is min(35, 0.5 × right-bloc strength), where right-bloc strength is the sum of each eligible party’s vote share multiplied by its rightwardness score, divided by 100. The bloc includes the FDP and Union parties when present." },
+          { "type": "paragraph", "content": "Each previous state-level coalition with the AfD costs 8 points, up to 32; each previous national coalition costs 20, up to 40. Modern street pressure is capped at 15 and equals max(0, min(15, (right-wing agitation − grassroots mobilization) × 0.08 + max(0, left-wing militancy − 35) × 0.08 + abs(Verfassungsschutz focus) × 0.04)). The separate coalition rule uses this score: a national coalition with the AfD is blocked while integrity is above 35; at or below 35, the game can allow it." },
+          { "type": "paragraph", "content": "These terms deliberately make democratic erosion cumulative: AfD polling and right-bloc strength create pressure, while normalizing an AfD coalition reduces the score further. The displayed score is rounded to a whole number after the penalties are applied. It is a transparent gameplay model, not a claim that democracy can be measured by this formula in reality." }
+        ]
       }
     },
     "mod_loader": {
@@ -3089,6 +3368,11 @@
     },
     "rally.sa_disrupt": {
       "id": "rally.sa_disrupt",
+      "onArrival": [
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) Q.left_wing_militancy = Math.min(100, (Number(Q.left_wing_militancy) || 0) + 12);"
+        }
+      ],
       "options": [
         {
           "id": "@rally.police_protect",
@@ -6166,10 +6450,9 @@
     },
     "library.government": {
       "id": "library.government",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.republic", "title": "Back to Republic and institutions" }
       ],
       "content": [
         {
@@ -8501,7 +8784,7 @@
       },
       "onArrival": [
         {
-          "$code": "Q['police_protect_success'] = (((((Q['prussian_police_loyalty'] || 0) * (Q['prussian_police_militancy'] || 0)) * (Q['prussian_police_strength'] || 0)) * 2) - ((Q['sa_militancy'] || 0) * (Q['sa_strength'] || 0)));"
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) { Q.police_protect_success = (Number(Q.prussian_police_loyalty || 0) * 25) + (Number(Q.interior_police_loyalty || 0) * 25) + (Number(Q.grassroots_mobilization || 0) * 0.1) - (Number(Q.right_wing_agitation || 0) * 0.35) + (Number(Q.verfassungsschutz_focus || 0) * 0.05); } else { Q['police_protect_success'] = (((((Q['prussian_police_loyalty'] || 0) * (Q['prussian_police_militancy'] || 0)) * (Q['prussian_police_strength'] || 0)) * 2) - ((Q['sa_militancy'] || 0) * (Q['sa_strength'] || 0))); }"
         }
       ],
       "goTo": [
@@ -11609,10 +11892,9 @@
     },
     "library.weimar_timeline": {
       "id": "library.weimar_timeline",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.republic", "title": "Back to Republic and institutions" }
       ],
       "content": [
         {
@@ -19730,19 +20012,10 @@
     },
     "library.curr_gov": {
       "id": "library.curr_gov",
-      "goTo": [
-        {
-          "id": "library.cabinet",
-          "predicate": {
-            "$code": "return (((Q['spd_in_government'] || 0)) !== 0);"
-          }
-        },
-        {
-          "id": "library.menu",
-          "predicate": {
-            "$code": "return (!(((Q['spd_in_government'] || 0)) !== 0));"
-          }
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.cabinet", "title": "View the cabinet" },
+        { "id": "@library.section.republic", "title": "Back to Republic and institutions" }
       ],
       "content": {
         "content": [
@@ -23295,10 +23568,9 @@
     },
     "library.cabinet": {
       "id": "library.cabinet",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.republic", "title": "Back to Republic and institutions" }
       ],
       "content": {
         "content": [
@@ -24047,7 +24319,7 @@
       "id": "rally.rb_protect",
       "onArrival": [
         {
-          "$code": "Q['rb_success'] = (((Q['rb_strength'] || 0) * (Q['rb_militancy'] || 0)) - ((Q['sa_strength'] || 0) * (Q['sa_militancy'] || 0)));\nQ['strife'] = (Q['strife'] || 0) + 1;"
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) { Q.rb_success = window.partySystem.streetRallyDefenseScore(Q); } else { Q['rb_success'] = (((Q['rb_strength'] || 0) * (Q['rb_militancy'] || 0)) - ((Q['sa_strength'] || 0) * (Q['sa_militancy'] || 0))); Q['strife'] = (Q['strife'] || 0) + 1; }"
         }
       ],
       "goTo": [
@@ -25499,10 +25771,9 @@
     },
     "library.demographics": {
       "id": "library.demographics",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.society", "title": "Back to Society and elections" }
       ],
       "content": [
         {
@@ -27343,6 +27614,7 @@
     },
     "library.public_opinion": {
       "id": "library.public_opinion",
+      "newPage": true,
       "onArrival": [
         {
           "$code": "Q.pro_republic_disp = Math.round(Q.pro_republic);\nQ.nationalism_disp = Math.round(Q.nationalism);\nQ.socialism_disp = Math.round(Q.socialism);"
@@ -28789,13 +29061,12 @@
     },
     "library.election_projections": {
       "id": "library.election_projections",
+      "newPage": true,
       "viewIf": {
         "$code": "return (((!(((Q['historical_mode'] || 0)) !== 0))) || (((Q['game_over'] || 0)) !== 0));"
       },
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "options": [
+        { "id": "@library.section.society", "title": "Back to Society and elections" }
       ],
       "content": {
         "content": [
@@ -30037,7 +30308,7 @@
       "unavailableSubtitle": "The loyal sections of the police have never coordinated with the democratic civic network before.",
       "onArrival": [
         {
-          "$code": "Q['rb_success'] = ((((Q['rb_strength'] || 0) * (Q['rb_militancy'] || 0)) - ((Q['sa_strength'] || 0) * (Q['sa_militancy'] || 0))) + ((((Q['prussian_police_loyalty'] || 0) * (Q['prussian_police_militancy'] || 0)) * (Q['prussian_police_strength'] || 0)) * 2));\nQ['strife'] = (Q['strife'] || 0) + 1;"
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) { Q.rb_success = window.partySystem.streetRallyDefenseScore(Q) + (Number(Q.prussian_police_loyalty || 0) * 20) + (Number(Q.interior_police_loyalty || 0) * 20) - (Number(Q.right_wing_agitation || 0) * 0.2); } else { Q['rb_success'] = ((((Q['rb_strength'] || 0) * (Q['rb_militancy'] || 0)) - ((Q['sa_strength'] || 0) * (Q['sa_militancy'] || 0))) + ((((Q['prussian_police_loyalty'] || 0) * (Q['prussian_police_militancy'] || 0)) * (Q['prussian_police_strength'] || 0)) * 2)); Q['strife'] = (Q['strife'] || 0) + 1; }"
         }
       ],
       "goTo": [
@@ -30676,10 +30947,9 @@
     },
     "library.parties": {
       "id": "library.parties",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.parties", "title": "Back to Parties and political forces" }
       ],
       "content": {
         "content": [
@@ -31637,15 +31907,14 @@
     },
     "library.paramilitaries": {
       "id": "library.paramilitaries",
+      "newPage": true,
       "onArrival": [
         {
           "$code": "Q.rb_strength = Math.round(Q.rb_strength);\nQ.sh_strength = Math.round(Q.sh_strength);\nQ.sa_strength = Math.round(Q.sa_strength);"
         }
       ],
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "options": [
+        { "id": "@library.section.parties", "title": "Back to Parties and political forces" }
       ],
       "content": {
         "content": [
@@ -32520,19 +32789,10 @@
     },
     "library.factions": {
       "id": "library.factions",
-      "goTo": [
-        {
-          "id": "library.neorevisionists",
-          "predicate": {
-            "$code": "return ((Q['neorevisionism'] || 0) > 0);"
-          }
-        },
-        {
-          "id": "library.menu",
-          "predicate": {
-            "$code": "return ((Q['neorevisionism'] || 0) <= 0);"
-          }
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.neorevisionists", "title": "Read about the Neorevisionists" },
+        { "id": "@library.section.parties", "title": "Back to Parties and political forces" }
       ],
       "content": {
         "content": [
@@ -33353,10 +33613,9 @@
     },
     "library.neorevisionists": {
       "id": "library.neorevisionists",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.parties", "title": "Back to Parties and political forces" }
       ],
       "content": {
         "content": [
@@ -33470,6 +33729,11 @@
     },
     "rally.main_rally": {
       "id": "rally.main_rally",
+      "onArrival": [
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.prepareStreetRally(Q);"
+        }
+      ],
       "options": [
         {
           "id": "@rally.class_struggle",
@@ -34093,10 +34357,9 @@
     "library.figures": {
       "id": "library.figures",
       "title": "Figures and Charts",
-      "goTo": [
-        {
-          "id": "library.menu"
-        }
+      "newPage": true,
+      "options": [
+        { "id": "@library.section.data", "title": "Back to Figures and charts" }
       ],
       "onArrival": [
         {
@@ -34558,16 +34821,7 @@
           "id": "library.menu"
         }
       ],
-      "content": [
-        {
-          "type": "heading",
-          "content": "The Library"
-        },
-        {
-          "type": "paragraph",
-          "content": "Herein contains relevant information about the government and politics of the German republic."
-        }
-      ]
+      "content": []
     },
     "inter_party_relationships.dvp_stresemann": {
       "id": "inter_party_relationships.dvp_stresemann",
@@ -34586,6 +34840,9 @@
       "onArrival": [
         {
           "$code": "Q['workers_spd'] = (Q['workers_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0)));\n if (((Q['left_strength'] || 0) > (Q['reformist_strength'] || 0)) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['nationalization_progress'] || 0) > 0) ) { Q['workers_spd'] = (Q['workers_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); } \n if (((Q['nationalization_progress'] || 0) > 0) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \nQ['left_strength'] = (Q['left_strength'] || 0) + 5;\nQ['left_dissent'] = (Q['left_dissent'] || 0) - 5;\nQ['old_middle_spd'] = (Q['old_middle_spd'] || 0) - 3;\nQ['new_middle_spd'] = (Q['new_middle_spd'] || 0) - 2;"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -34955,6 +35212,9 @@
       "onArrival": [
         {
           "$code": "Q['workers_spd'] = (Q['workers_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));\n if (((Q['welfare'] || 0) > 0) ) { Q['workers_spd'] = (Q['workers_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['welfare'] || 0) > 0) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['welfare'] || 0) > 1) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); } \nQ['reformist_strength'] = (Q['reformist_strength'] || 0) + 3;\nQ['labor_strength'] = (Q['labor_strength'] || 0) + 4;\nQ['reformist_dissent'] = (Q['reformist_dissent'] || 0) - 3;\nQ['labor_dissent'] = (Q['labor_dissent'] || 0) - 3;"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -35451,6 +35711,9 @@
       "onArrival": [
         {
           "$code": "Q['democratization'] = (Q['democratization'] || 0) + 1;\nQ['pro_republic'] = (Q['pro_republic'] || 0) + (2 * (1 - (Q['dissent'] || 0)));\n if (((Q['democratization'] || 0) >= 3) ) { Q['workers_spd'] = (Q['workers_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); } \n if (((Q['democratization'] || 0) >= 3) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['democratization'] || 0) >= 3) ) { Q['pro_republic'] = (Q['pro_republic'] || 0) + (4 * (1 - (Q['dissent'] || 0))); } \n if (((Q['democratization'] || 0) >= 3) ) { Q['new_middle_spd'] = (Q['new_middle_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); }"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -36114,6 +36377,9 @@
       "onArrival": [
         {
           "$code": "Q['pacifism'] = (Q['pacifism'] || 0) + 1;\nQ['nationalism'] = (Q['nationalism'] || 0) - (2 * (1 - (Q['dissent'] || 0)));\n if (((Q['pacifism'] || 0) >= 3) ) { Q['workers_spd'] = (Q['workers_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); } \n if (((Q['pacifism'] || 0) >= 3) ) { Q['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['pacifism'] || 0) >= 3) ) { Q['nationalism'] = (Q['nationalism'] || 0) - (3 * (1 - (Q['dissent'] || 0))); } \n if (((Q['pacifism'] || 0) >= 3) ) { Q['new_middle_spd'] = (Q['new_middle_spd'] || 0) + (4 * (1 - (Q['dissent'] || 0))); }"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -36376,6 +36642,9 @@
       "onArrival": [
         {
           "$code": "Q['wtb_support'] = (Q['wtb_support'] || 0) + 1;\nQ['workers_spd'] = (Q['workers_spd'] || 0) + (6 * (1 - (Q['dissent'] || 0)));\nQ['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (6 * (1 - (Q['dissent'] || 0)));\nQ['rural_spd'] = (Q['rural_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));\nQ['new_middle_spd'] = (Q['new_middle_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));\nQ['old_middle_spd'] = (Q['old_middle_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -36617,6 +36886,9 @@
       "onArrival": [
         {
           "$code": "Q['workers_spd'] = (Q['workers_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));\nQ['old_middle_spd'] = (Q['old_middle_spd'] || 0) + (1 * (1 - (Q['dissent'] || 0)));\nQ['new_middle_spd'] = (Q['new_middle_spd'] || 0) + (2 * (1 - (Q['dissent'] || 0)));\nQ['unemployed_spd'] = (Q['unemployed_spd'] || 0) + (3 * (1 - (Q['dissent'] || 0)));"
+        },
+        {
+          "$code": "if (Q.modern_scenario && !Q.historical_mode) window.partySystem.applyStreetRallyEffectiveness(Q);"
         }
       ],
       "content": {
@@ -36638,17 +36910,32 @@
       },
       "onArrival": [
         {
-          "$code": "Q['month_actions'] = (Q['month_actions'] || 0) + 1;\nQ['rally_timer'] = 6;"
+          "$code": "Q['month_actions'] = (Q['month_actions'] || 0) + 1;\nQ['rally_timer'] = 6; if (Q.modern_scenario && !Q.historical_mode) { Q.modern_rally_blocked = Math.random() < window.partySystem.streetRallyBlockChance(Q) ? 1 : 0; }"
         }
       ],
       "goTo": [
         {
-          "id": "rally.main_rally"
+          "id": "rally.sa_disrupt",
+          "predicate": {
+            "$code": "return !!(Q.modern_scenario && !Q.historical_mode && Q.modern_rally_blocked);"
+          }
+        },
+        {
+          "id": "rally.main_rally",
+          "predicate": {
+            "$code": "return !!(Q.modern_scenario && !Q.historical_mode && !Q.modern_rally_blocked);"
+          }
+        },
+        {
+          "id": "rally.main_rally",
+          "predicate": {
+            "$code": "return !Q.modern_scenario || Q.historical_mode ? !((((Q['sa_strength'] || 0) > 180) && (!(((Q['sa_banned'] || 0)) !== 0))) && (!(((Q['return_to_normalcy'] || 0)) !== 0))) : false;"
+          }
         },
         {
           "id": "rally.sa_disrupt",
           "predicate": {
-            "$code": "return ((((Q['sa_strength'] || 0) > 180) && (!(((Q['sa_banned'] || 0)) !== 0))) && (!(((Q['return_to_normalcy'] || 0)) !== 0)));"
+            "$code": "return !!(Q.historical_mode && ((((Q['sa_strength'] || 0) > 180) && (!(((Q['sa_banned'] || 0)) !== 0))) && (!(((Q['return_to_normalcy'] || 0)) !== 0))));"
           }
         }
       ],
@@ -49354,7 +49641,7 @@
       "id": "street_organising.radical_activists",
       "onArrival": [
         {
-          "$code": "Q.resources = Math.max(0, (Q.resources || 0) - 1); Q.left_wing_militancy = Math.min(100, (Q.left_wing_militancy || 0) + 15); Q.right_wing_agitation = Math.max(0, (Q.right_wing_agitation || 0) - 6); Q.verfassungsschutz_focus = Math.max(-100, (Q.verfassungsschutz_focus || 0) - 12); if (Q.spd_in_government) Q.coalition_dissent = (Q.coalition_dissent || 0) + 1;"
+          "$code": "Q.resources = Math.max(0, (Q.resources || 0) - 1); Q.left_wing_militancy = Math.min(100, (Q.left_wing_militancy || 0) + 15); Q.right_wing_agitation = Math.max(0, (Q.right_wing_agitation || 0) - 6); var oldFocus = Number(Q.verfassungsschutz_focus) || 0; Q.verfassungsschutz_focus = Math.max(-100, oldFocus - 12); window.partySystem.updatePoliceLoyaltyForFocus(Q, Q.verfassungsschutz_focus - oldFocus); if (Q.spd_in_government) Q.coalition_dissent = (Q.coalition_dissent || 0) + 1;"
         }
       ],
       "maxVisits": 2,
@@ -49374,7 +49661,7 @@
       },
       "onArrival": [
         {
-          "$code": "Q.resources = Math.max(0, (Q.resources || 0) - 1); var securityShift = Q.interior_minister_party === 'SPD' ? 24 : ((Q.interior_minister_party === 'CDU' || Q.interior_minister_party === 'CSU') ? 14 : 18); Q.verfassungsschutz_focus = Math.min(100, (Q.verfassungsschutz_focus || 0) + securityShift); Q.right_wing_agitation = Math.max(0, (Q.right_wing_agitation || 0) - Math.floor(securityShift / 6));"
+          "$code": "Q.resources = Math.max(0, (Q.resources || 0) - 1); var securityShift = Q.interior_minister_party === 'SPD' ? 24 : ((Q.interior_minister_party === 'CDU' || Q.interior_minister_party === 'CSU') ? 14 : 18); var oldFocus = Number(Q.verfassungsschutz_focus) || 0; Q.verfassungsschutz_focus = Math.min(100, oldFocus + securityShift); window.partySystem.updatePoliceLoyaltyForFocus(Q, Q.verfassungsschutz_focus - oldFocus); Q.right_wing_agitation = Math.max(0, (Q.right_wing_agitation || 0) - Math.floor(securityShift / 6));"
         }
       ],
       "goTo": [

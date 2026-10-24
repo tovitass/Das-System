@@ -928,3 +928,142 @@ body.dark-mode .modern-coalition-option.unavailable .modern-coalition-status { c
 body.dark-mode .modern-coalition-option { border-color: #8e8579; }
 body.dark-mode .modern-coalition-option.possible { background: rgba(77, 170, 95, .12); }
 body.dark-mode .modern-coalition-option.unavailable { border-color: #777; background: rgba(255,255,255,.07); }
+
+/* The Library is a compact reference hub, distinct from story scenes. */
+#content.library-screen {
+  --library-accent: #92283a;
+  box-sizing: border-box;
+  width: calc(100% - 2rem);
+  max-width: 52rem;
+  margin: 2rem auto;
+  padding: clamp(1.35rem, 4vw, 3rem);
+  border-top: 4px solid var(--library-accent);
+  background: var(--content-bg-color);
+}
+body.library-open #stats_sidebar { display: none; }
+body.dark-mode #content.library-screen { --library-accent: #ff9baa; }
+#content.library-screen > h1:first-child {
+  margin: 0 0 .75rem;
+  color: var(--library-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.15;
+  text-align: left;
+  text-shadow: none;
+  text-transform: none;
+}
+#content.library-screen > h1:first-child::before {
+  display: block;
+  margin-bottom: .8rem;
+  color: var(--text-color);
+  content: "REFERENCE  /  FIELD GUIDE";
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: .35em;
+  font-weight: 700;
+  letter-spacing: .16em;
+  opacity: .62;
+}
+#content.library-screen.library-section > h1:first-child::before {
+  content: "THE LIBRARY  /  COLLECTION";
+}
+#content.library-screen > p {
+  max-width: 48rem;
+  margin: 0 0 1.5rem;
+  color: var(--text-color);
+  font-size: .98em;
+  line-height: 1.75;
+  text-indent: 0;
+}
+#content.library-screen > ul.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+#content.library-screen > ul.choices li {
+  position: relative;
+  display: flex;
+  min-height: 5rem;
+  box-sizing: border-box;
+  align-items: center;
+  gap: .8rem;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(90, 70, 55, .25);
+  border-left: 3px solid var(--library-accent);
+  border-radius: 3px;
+  background: var(--bg-color);
+  line-height: 1.45;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+#content.library-screen > ul.choices li:hover {
+  border-color: var(--library-accent);
+  background: var(--bg-color);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .1);
+  cursor: pointer;
+  transform: translateY(-2px);
+}
+#content.library-screen > ul.choices li a {
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  color: var(--text-color);
+  font-weight: 600;
+}
+#content.library-screen > ul.choices li a::after {
+  flex: 0 0 auto;
+  color: var(--library-accent);
+  content: "→";
+  font-size: 1.15em;
+}
+#content.library-screen.library-home > ul.choices li:not(:last-child)::before {
+  color: var(--library-accent);
+  content: "0" counter(library-section);
+  font-size: .75em;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+#content.library-screen.library-home > ul.choices {
+  counter-reset: library-section;
+}
+#content.library-screen.library-home > ul.choices li:not(:last-child) {
+  counter-increment: library-section;
+}
+#content.library-screen > ul.choices li:last-child {
+  grid-column: 1 / -1;
+  min-height: 0;
+  border: 0;
+  border-top: 1px solid rgba(90, 70, 55, .2);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+#content.library-screen > ul.choices li:last-child a {
+  justify-content: flex-start;
+  color: var(--link-color);
+  font-size: .9em;
+}
+#content.library-screen > ul.choices li:last-child a::after { content: ""; }
+body.dark-mode #content.library-screen > ul.choices li {
+  border-color: rgba(255, 255, 255, .2);
+  border-left-color: var(--library-accent);
+}
+body.dark-mode #content.library-screen > ul.choices li:last-child {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, .2);
+}
+@media (max-width: 620px) {
+  #content.library-screen { margin: 1rem auto; }
+  #content.library-screen > ul.choices { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #content.library-screen > ul.choices li { transition: none; }
+}

@@ -90,6 +90,12 @@
         if (content) {
           content.classList.toggle('startup-screen', !!state &&
             (state.sceneId === 'root.start' || state.sceneId === 'start_menu'));
+          var isLibrary = !!state && state.sceneId.startsWith('library');
+          content.classList.toggle('library-screen', isLibrary);
+          content.classList.toggle('library-home', !!state && state.sceneId === 'library.menu');
+          content.classList.toggle('library-section', !!state &&
+            (state.sceneId.startsWith('library.section.') || state.sceneId.startsWith('library.modern.section.')));
+          document.body.classList.toggle('library-open', isLibrary);
         }
         if (state && state.sceneId === 'modern_federal_election') {
           var choices = content.querySelector('ul.choices');

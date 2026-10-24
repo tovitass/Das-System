@@ -498,8 +498,17 @@
     var bourgeoisiePressure = Math.min(35, inputs.bourgeoisieRightStrength * 0.5);
     var stateCoalitionPressure = Math.min(32, inputs.stateCoalitions * 8);
     var nationalCoalitionPressure = Math.min(40, inputs.nationalCoalitions * 20);
+    var streetPressure = 0;
+    if (!qualities.historical_mode) {
+      window.electionSystem.ensureStreetState(qualities);
+      var focus = Number(qualities.verfassungsschutz_focus) || 0;
+      streetPressure = Math.max(0, Math.min(15,
+        (qualities.right_wing_agitation - qualities.grassroots_mobilization) * 0.08 +
+        Math.max(0, qualities.left_wing_militancy - 35) * 0.08 + Math.abs(focus) * 0.04
+      ));
+    }
     qualities.firewall_integrity = Math.max(0, Math.min(100, Math.round(
-      100 - afdPressure - bourgeoisiePressure - stateCoalitionPressure - nationalCoalitionPressure
+      100 - afdPressure - bourgeoisiePressure - stateCoalitionPressure - nationalCoalitionPressure - streetPressure
     )));
     qualities.firewall_inputs = {
       afd_polling: Math.round(inputs.afdPolling * 10) / 10,
@@ -507,7 +516,8 @@
       bourgeoisie_rightness: Math.round(inputs.bourgeoisieRightness * 10) / 10,
       bourgeoisie_support: Math.round(inputs.bourgeoisieSupport * 10) / 10,
       state_coalitions: inputs.stateCoalitions,
-      national_coalitions: inputs.nationalCoalitions
+      national_coalitions: inputs.nationalCoalitions,
+      street_pressure: Math.round(streetPressure * 10) / 10
     };
     return qualities.firewall_integrity;
   }
@@ -622,6 +632,63 @@
       return (relationValue(qualities, "cdu", other) + relationValue(qualities, "csu", other)) / 2;
     }
     return value === undefined ? 50 : Math.max(0, Math.min(100, Number(value) || 0));
+  }
+
+  function streetRallyBlockChance(qualities) {
+    window.electionSystem.ensureStreetState(qualities);
+    var parties = ["fdp", "cdu", "csu"].filter(function (id) {
+      return !Array.isArray(qualities.parties) || qualities.parties.indexOf(id) !== -1;
+    });
+    if (parties.indexOf("cdu") === -1 && parties.indexOf("csu") === -1 &&
+        Array.isArray(qualities.parties) && qualities.parties.indexOf("ucd") !== -1) parties.push("ucd");
+    var rightness = 0;
+    var relation = 0;
+    parties.forEach(function (id) {
+      rightness += Number((qualities.party_rightwing || {})[id]) || 50;
+      relation += relationValue(qualities, "spd", id);
+    });
+    rightness /= parties.length || 1;
+    relation /= parties.length || 1;
+    return Math.max(0.05, Math.min(0.8,
+      0.08 + qualities.right_wing_agitation * 0.0045 +
+      (rightness - 50) * 0.0024 + (50 - relation) * 0.0015
+    ));
+  }
+
+  function streetRallyDefenseScore(qualities) {
+    window.electionSystem.ensureStreetState(qualities);
+    return qualities.left_wing_militancy * 0.7 + qualities.grassroots_mobilization * 0.15 -
+      qualities.right_wing_agitation * 0.5;
+  }
+
+  function prepareStreetRally(qualities) {
+    window.electionSystem.ensureStreetState(qualities);
+    qualities.rally_effectiveness = 0.5 + qualities.grassroots_mobilization / 100;
+    qualities.rally_support_before = {};
+    (qualities.classes || []).forEach(function (group) {
+      var key = group + "_spd";
+      qualities.rally_support_before[key] = Number(qualities[key]) || 0;
+    });
+  }
+
+  function applyStreetRallyEffectiveness(qualities) {
+    if (qualities.historical_mode || !qualities.rally_support_before) return;
+    var multiplier = Number(qualities.rally_effectiveness) || 1;
+    Object.keys(qualities.rally_support_before).forEach(function (key) {
+      var before = Number(qualities.rally_support_before[key]) || 0;
+      var after = Number(qualities[key]) || 0;
+      qualities[key] = before + (after - before) * multiplier;
+    });
+  }
+
+  function updatePoliceLoyaltyForFocus(qualities, focusChange) {
+    if (qualities.historical_mode) return;
+    var loyaltyChange = Number(focusChange || 0) * 0.0015;
+    ["interior_police_loyalty", "prussian_police_loyalty"].forEach(function (key) {
+      var current = Number(qualities[key]);
+      if (!isFinite(current)) current = key === "interior_police_loyalty" ? 0.45 : 0.5;
+      qualities[key] = Math.max(0, Math.min(1, current + loyaltyChange));
+    });
   }
 
   function trackRelationTrend(qualities, key, value) {
@@ -800,6 +867,8 @@
     var swing = Math.max(-2, Math.min(2,
       (qualities.grassroots_mobilization - qualities.right_wing_agitation) / 25));
     var backlash = Math.max(0, qualities.left_wing_militancy - 35) * 0.025;
+    var blockChance = window.partySystem.streetRallyBlockChance(qualities);
+    var rallyEffectiveness = 0.5 + qualities.grassroots_mobilization / 100;
     return '<section class="party-panel street-panel"><h3>Street and civil society</h3>' +
       streetMetric('Right-wing agitation', qualities.right_wing_agitation, '#b94b42', 'Far-right street pressure and intimidation. Higher values strengthen the AfD’s polling position.') +
       streetMetric('Grassroots mobilization', qualities.grassroots_mobilization, '#39833b', 'The SPD’s ability to organize unions, civic groups, and peaceful democratic counter-protests.') +
@@ -810,6 +879,8 @@
       '<div class="street-focus-labels"><span>Far-left targeted</span><span>Balanced</span><span>Far-right targeted</span></div>' +
       '<p>Negative values put more scrutiny on the far-left; positive values put more scrutiny on the far-right.</p></div>' +
       '<p class="street-impact">Current polling effect: grassroots versus right-wing agitation shifts up to 2 points between the SPD and AfD. Militancy above 35 and far-left security focus can reduce SPD support; far-right focus can reduce AfD support.</p>' +
+      '<p class="street-impact">Rally effect: grassroots puts rally gains at ' + Math.round(rallyEffectiveness * 100) + '% of baseline. Current right-wing obstruction chance: ' + Math.round(blockChance * 100) + '%, based on agitation, CDU/CSU and FDP right-wing scores, and their relations with the SPD. If a rally is blocked, militancy rises by 12; civic defense weighs militancy and grassroots against agitation, and a non-negative defense score reopens the rally.</p>' +
+      '<p class="street-impact">Security effect: changes in Verfassungsschutz focus also shift interior and Prussian police loyalty. Strongly one-sided focus and an unfavorable street balance add pressure to firewall integrity.</p>' +
       '</section>';
   }
 
@@ -867,6 +938,7 @@
         Math.round(bourgeoisieRightStrength) + ' / 100 · ' + ideologyDescription(bourgeoisieRightStrength) + '</span></p>' +
         '<p><strong><span class="bourgeoisie-label">Bourgeoisie</span>–AfD relations:</strong> <span style="color:' + relationColor(bourgeoisieRelation) + '">' +
         Math.round(bourgeoisieRelation) + ' · ' + relationDescription(bourgeoisieRelation) + '</span></p>' +
+        '<p><strong>Street climate pressure:</strong> ' + (qualities.firewall_inputs.street_pressure || 0) + ' points.</p>' +
         '</div></details></section>';
     }
     return null;
@@ -919,6 +991,11 @@
     setRelation: setRelation,
     adjustRelation: adjustRelation,
     relationValue: relationValue,
+    streetRallyBlockChance: streetRallyBlockChance,
+    streetRallyDefenseScore: streetRallyDefenseScore,
+    prepareStreetRally: prepareStreetRally,
+    applyStreetRallyEffectiveness: applyStreetRallyEffectiveness,
+    updatePoliceLoyaltyForFocus: updatePoliceLoyaltyForFocus,
     setUnionAlliance: setUnionAlliance,
     setUnionState: setUnionState,
     adjustRightWing: adjustRightWing,

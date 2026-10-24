@@ -87,7 +87,35 @@
       }
     });
     if (ids.indexOf("spd") !== -1) result.spd += spdTransfer;
+    applyMonthlyPollingJiggle(result, qualities, ids);
     return applyStreetEffects(result, qualities, ids);
+  }
+
+  // Polls have a little month-to-month sampling noise. Store the result in the
+  // game state so reopening the panel or reloading a save cannot reroll it.
+  function applyMonthlyPollingJiggle(shares, qualities, ids) {
+    var monthIndex = (Number(qualities.year) || 2017) * 12 + ((Number(qualities.month) || 1) - 1);
+    if (Number(qualities.polling_jiggle_month) !== monthIndex) {
+      var jiggle = {};
+      if (ids.length > 1 && Math.random() < 0.5) {
+        var donorIndex = Math.floor(Math.random() * ids.length);
+        var receiverIndex = Math.floor(Math.random() * (ids.length - 1));
+        if (receiverIndex >= donorIndex) receiverIndex++;
+        var donor = ids[donorIndex];
+        var receiver = ids[receiverIndex];
+        var amount = Math.min(0.5, Math.max(0, Number(shares[donor]) || 0));
+        if (amount > 0) {
+          jiggle[donor] = -amount;
+          jiggle[receiver] = amount;
+        }
+      }
+      qualities.polling_jiggle = jiggle;
+      qualities.polling_jiggle_month = monthIndex;
+    }
+    var changes = qualities.polling_jiggle || {};
+    ids.forEach(function (id) {
+      shares[id] = Math.max(0, (Number(shares[id]) || 0) + (Number(changes[id]) || 0));
+    });
   }
 
   function applyStreetEffects(shares, qualities, ids) {
