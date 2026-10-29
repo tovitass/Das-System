@@ -28,9 +28,69 @@
       (electionYear - currentYear) * 12 + (9 - currentMonth);
     qualities.election_records = qualities.election_records || [];
     qualities.n_elections = Number(qualities.n_elections) || 0;
+    ensureCorePollingState(qualities);
+  }
+
+  function ensureCorePollingState(qualities) {
+    ["european_integration_trust", "foreign_policy_salience", "european_issue_salience"].forEach(function (key) {
+      delete qualities[key];
+    });
+    var defaults = {
+      government_trust: 60,
+      political_polarization: 25
+    };
+    Object.keys(defaults).forEach(function (key) {
+      var value = Number(qualities[key]);
+      if (!isFinite(value)) value = defaults[key];
+      qualities[key] = Math.max(0, Math.min(100, value));
+    });
+    if (!qualities.polling_baseline) {
+      qualities.polling_baseline = {
+        growth: Number(qualities.economic_growth) || 0,
+        inflation: Number(qualities.inflation) || 0,
+        unemployment: Number(qualities.unemployed) || 0,
+        governmentTrust: qualities.government_trust,
+        polarization: qualities.political_polarization
+      };
+    }
+    delete qualities.polling_baseline.europeanTrust;
+    delete qualities.polling_baseline.foreignPolicy;
+    delete qualities.polling_baseline.europeanSalience;
+    return qualities.polling_baseline;
+  }
+
+  function applyCorePollingEffects(shares, qualities, ids) {
+    var baseline = ensureCorePollingState(qualities);
+    var government = Array.isArray(qualities.government_parties) ? qualities.government_parties : [];
+    var radioStrength = Math.max(0, Math.min(9, Number(qualities.radio) || 0));
+    var discourseScale = 1 / (1 + radioStrength * 0.12);
+    var changes = {
+      growth: (Number(qualities.economic_growth) || 0) - baseline.growth,
+      inflation: (Number(qualities.inflation) || 0) - baseline.inflation,
+      unemployment: (Number(qualities.unemployed) || 0) - baseline.unemployment,
+      governmentTrust: (qualities.government_trust - baseline.governmentTrust),
+      polarization: (qualities.political_polarization - baseline.polarization) / 10
+    };
+    ids.forEach(function (id) {
+      var party = window.partySystem.get(id) || {};
+      var sensitivity = party.pollingSensitivity || {};
+      var incumbent = government.indexOf(id) !== -1 ||
+        (id === "ucd" && (government.indexOf("cdu") !== -1 || government.indexOf("csu") !== -1));
+      var change = 0;
+      change += changes.growth * (Number(sensitivity.growth) || 0);
+      change += changes.inflation * (Number(sensitivity.inflation) || 0);
+      change += changes.unemployment * (Number(sensitivity.unemployment) || 0);
+      change += changes.governmentTrust * (Number(sensitivity.governmentTrust) || 0) * (incumbent ? 1 : -1);
+      change += discourseScale * changes.polarization * (Number(sensitivity.polarization) || 0);
+      shares[id] = Math.max(0, (Number(shares[id]) || 0) + change);
+    });
+    var total = ids.reduce(function (sum, id) { return sum + (Number(shares[id]) || 0); }, 0) || 1;
+    ids.forEach(function (id) { shares[id] = 100 * (Number(shares[id]) || 0) / total; });
+    return shares;
   }
 
   function voteShares(qualities) {
+    ensureCorePollingState(qualities);
     var partySystem = window.partySystem;
     var ids = Array.isArray(qualities.parties) ? qualities.parties.filter(function (id) { return !!partySystem.get(id); }) : partySystem.activeIds();
     var result = {};
@@ -62,19 +122,7 @@
         result[id] = bonus ? result[id] + bonus : Math.max(0, result[id] - bonusTotal * result[id] / donorTotal);
       });
     }
-    // Active crisis topics can move opinion between polling checkpoints. Their
-    // modest, explicit shifts affect projections while the issue is in play.
-    if (!qualities.historical_mode && Array.isArray(qualities.active_crises)) {
-      var currentMonth = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1);
-      qualities.active_crises.forEach(function(crisis) {
-        if (!crisis || Number(crisis.expiresAt) < currentMonth || !crisis.polling) return;
-        Object.keys(crisis.polling).forEach(function(id) {
-          if (ids.indexOf(id) !== -1) result[id] = Math.max(0, (result[id] || 0) + (Number(crisis.polling[id]) || 0));
-        });
-      });
-      var crisisTotal = ids.reduce(function(sum, id) { return sum + (result[id] || 0); }, 0) || 1;
-      ids.forEach(function(id) { result[id] = 100 * (result[id] || 0) / crisisTotal; });
-    }
+    if (!qualities.historical_mode) applyCorePollingEffects(result, qualities, ids);
     // The Our Enemies campaign is intended to win over voters from the
     // parties it targets. Shift a modest share from each targeted party to SPD.
     var targets = Array.isArray(qualities.enemy_targets) ? qualities.enemy_targets : [];
@@ -91,19 +139,20 @@
     return applyStreetEffects(result, qualities, ids);
   }
 
-  // Polls have a little month-to-month sampling noise. Store the result in the
+  // Polls have month-to-month sampling noise of 0.5 to 2.5 percentage points. Store the result in the
   // game state so reopening the panel or reloading a save cannot reroll it.
   function applyMonthlyPollingJiggle(shares, qualities, ids) {
     var monthIndex = (Number(qualities.year) || 2017) * 12 + ((Number(qualities.month) || 1) - 1);
     if (Number(qualities.polling_jiggle_month) !== monthIndex) {
       var jiggle = {};
-      if (ids.length > 1 && Math.random() < 0.5) {
-        var donorIndex = Math.floor(Math.random() * ids.length);
+      var eligibleDonors = ids.filter(function(id) { return (Number(shares[id]) || 0) >= 2.5; });
+      if (ids.length > 1 && eligibleDonors.length && Math.random() < 0.5) {
+        var donor = eligibleDonors[Math.floor(Math.random() * eligibleDonors.length)];
+        var donorIndex = ids.indexOf(donor);
         var receiverIndex = Math.floor(Math.random() * (ids.length - 1));
         if (receiverIndex >= donorIndex) receiverIndex++;
-        var donor = ids[donorIndex];
         var receiver = ids[receiverIndex];
-        var amount = Math.min(0.5, Math.max(0, Number(shares[donor]) || 0));
+        var amount = 0.5 + Math.random() * 2;
         if (amount > 0) {
           jiggle[donor] = -amount;
           jiggle[receiver] = amount;
@@ -142,6 +191,19 @@
     return qualities;
   }
 
+  function updateRightWingAgitation(qualities) {
+    if (!qualities || qualities.historical_mode) return;
+    ensureStreetState(qualities);
+    var monthTime = Number(qualities.time) || 0;
+    if (Number(qualities.right_wing_agitation_updated_time) === monthTime) return;
+    var afdPolling = Number(voteShares(qualities).afd) || 0;
+    var polarization = Math.max(0, Math.min(100, Number(qualities.political_polarization) || 25));
+    var target = Math.max(0, Math.min(100, afdPolling * 1.8 + polarization * 0.65));
+    var current = Number(qualities.right_wing_agitation) || 0;
+    qualities.right_wing_agitation = Math.max(0, Math.min(100, current + Math.max(-4, Math.min(4, (target - current) * 0.25))));
+    qualities.right_wing_agitation_updated_time = monthTime;
+  }
+
   function pollingEntries(qualities, shares) {
     var partySystem = window.partySystem;
     var ids = Array.isArray(qualities.parties) ? qualities.parties.filter(function (id) { return !!partySystem.get(id); }) : partySystem.activeIds();
@@ -178,14 +240,26 @@
     var rows = sorted.map(function (entry) {
       var status = entry.id === "other" ? "Aggregate only; not allocated as a party" : entry.share < THRESHOLD ? "Below 5% threshold" : (result.seats[entry.id] || 0) + " projected seats";
       var party = partySystem.get(entry.id) || { color: "#777" };
-      return '<li class="party-row"><div class="party-row-heading">' + partySystem.renderName(entry.id, entry.label) + '<span class="party-percent">' + entry.share.toFixed(1) + '%</span></div><div class="party-meter"><span style="width:' + entry.share.toFixed(2) + '%;--party-color:' + escape(party.color) + '"></span></div><div class="poll-seat-status">' + escape(status) + '</div></li>';
+      var trendKey = entry.id === "cdu" && entry.label === "CDU + CSU" ? "union" : entry.id;
+      if (trendKey === "ucd" && qualities.polling_trends && !qualities.polling_trends.ucd) trendKey = "union";
+      var trend = qualities.polling_trends && qualities.polling_trends[trendKey];
+      var arrow = partySystem.renderTrendArrow(trend ? trend.direction : "same");
+      return '<li class="party-row"><div class="party-row-heading">' + partySystem.renderName(entry.id, entry.label) + '<span class="party-percent">' + entry.share.toFixed(1) + '% ' + arrow + '</span></div><div class="party-meter"><span style="width:' + entry.share.toFixed(2) + '%;--party-color:' + escape(party.color) + '"></span></div><div class="poll-seat-status">' + escape(status) + '</div></li>';
     }).join("");
-    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>Parties below 5% are excluded from seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul><h3>Polling over the last 12 months</h3>' + historyChart + '</section>';
+    var governmentParties = Array.isArray(qualities.government_parties) ? qualities.government_parties : [];
+    var governmentShare = governmentParties.reduce(function (sum, id) {
+      if (id === "ucd") return sum + (Number(rawShares.ucd) || (Number(rawShares.cdu) || 0) + (Number(rawShares.csu) || 0));
+      return sum + (Number(rawShares[id]) || 0);
+    }, 0);
+    var approval = governmentParties.length ? governmentShare.toFixed(1) + '%' : '—';
+    var publicTrust = Math.round(Number(qualities.government_trust) || 0);
+    return '<section class="party-panel polls-panel"><h3>Projected vote shares</h3><p>Parties below 5% are excluded from seat allocation.</p>' + chart + '<h3>Projected election results</h3><ul class="party-list">' + rows + '</ul><h3>Polling over the last 12 months</h3>' + historyChart + '<hr><p class="government-approval"><strong>Government approval:</strong> ' + approval + '</p><p class="public-trust"><strong>Public trust:</strong> ' + publicTrust + ' / 100</p></section>';
   }
 
   function recordPollingHistory(qualities, knownShares) {
     var shares = knownShares || voteShares(qualities);
     var monthIndex = (Number(qualities.year) || 2017) * 12 + ((Number(qualities.month) || 1) - 1);
+    recordPollingTrends(qualities, shares, monthIndex);
     if (qualities.polling_history_version !== 2) {
       qualities.polling_history = [];
       qualities.polling_history_version = 2;
@@ -203,6 +277,36 @@
     history = history.filter(function (item) { return item.month >= monthIndex - 12 && item.month < monthIndex; });
     qualities.polling_history = history;
     return history;
+  }
+
+  function recordPollingTrends(qualities, shares, monthIndex) {
+    var current = Object.assign({}, shares);
+    if (current.cdu !== undefined || current.csu !== undefined) {
+      current.union = (Number(current.cdu) || 0) + (Number(current.csu) || 0);
+    }
+    var trends = qualities.polling_trends || (qualities.polling_trends = {});
+    var previous = qualities.polling_trend_previous;
+    if (!previous) {
+      Object.keys(current).forEach(function (id) { trends[id] = { direction: "same" }; });
+      qualities.polling_trend_previous = { month: monthIndex, shares: current };
+      return trends;
+    }
+    if (monthIndex > previous.month) {
+      Object.keys(current).forEach(function (id) {
+        if (previous.shares[id] === undefined) {
+          trends[id] = { direction: "same" };
+          return;
+        }
+        var difference = Number(current[id]) - Number(previous.shares[id]);
+        var direction = difference > 0 ? "up" : difference < 0 ? "down" : "same";
+        trends[id] = { direction: direction };
+      });
+      // Keep the completed month's baseline fixed while this month is in
+      // progress. Otherwise opening Polls after a campaign overwrites it and
+      // the campaign's polling change disappears from next month's comparison.
+      qualities.polling_trend_previous = { month: monthIndex, shares: current };
+    }
+    return trends;
   }
 
   function renderPollingHistory(history, entries, partySystem) {
@@ -394,6 +498,7 @@
     voteShares: voteShares,
     recordPollingHistory: recordPollingHistory,
     ensureStreetState: ensureStreetState,
+    updateRightWingAgitation: updateRightWingAgitation,
     renderPolls: renderPolls,
     allocateSeats: allocateSeats,
     calculate: calculate,

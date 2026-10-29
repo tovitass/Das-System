@@ -11,6 +11,7 @@
       shortName: "Linke",
       color: "#d5007f",
       status: "active",
+      pollingSensitivity: { growth: 0.025, inflation: 0.035, unemployment: 0.075, governmentTrust: 0.055, polarization: 0.055 },
       aliases: ["Die Linke", "Linke", "Socialist", "Socialists"]
     },
     greens: {
@@ -18,6 +19,7 @@
       fullName: "Alliance 90/The Greens",
       color: "#39833b",
       status: "active",
+      pollingSensitivity: { growth: 0.045, inflation: -0.035, unemployment: -0.035, governmentTrust: 0.055, polarization: -0.04 },
       aliases: ["Greens", "Green Party", "Bündnis 90/Die Grünen", "left-liberal Greens", "Die Grünen", "Social-Liberal"]
     },
     spd: {
@@ -25,6 +27,7 @@
       fullName: "Social Democratic Party of Germany",
       color: "#e3000f",
       status: "active",
+      pollingSensitivity: { growth: 0.055, inflation: -0.075, unemployment: -0.08, governmentTrust: 0.075, polarization: -0.025 },
       aliases: ["SPD", "Social Democrats"]
     },
     fdp: {
@@ -32,6 +35,7 @@
       fullName: "Free Democratic Party",
       color: "#9a7900",
       status: "active",
+      pollingSensitivity: { growth: 0.075, inflation: -0.065, unemployment: -0.045, governmentTrust: 0.045, polarization: -0.025 },
       aliases: ["FDP", "Market-Liberal", "Market-Liberals"]
     },
     cdu: {
@@ -40,6 +44,7 @@
       color: "#171717",
       status: "active",
       parliamentaryGroup: "union",
+      pollingSensitivity: { growth: 0.055, inflation: -0.065, unemployment: -0.055, governmentTrust: 0.065, polarization: -0.035 },
       aliases: ["CDU", "CDU/CSU", "Conservative", "Conservatives"]
     },
     csu: {
@@ -48,6 +53,7 @@
       color: "#171717",
       status: "active",
       parliamentaryGroup: "union",
+      pollingSensitivity: { growth: 0.055, inflation: -0.065, unemployment: -0.055, governmentTrust: 0.065, polarization: -0.035 },
       aliases: ["CSU"]
     },
     afd: {
@@ -55,7 +61,8 @@
       fullName: "Alternative for Germany",
       color: "#168ac4",
       status: "active",
-      aliases: ["AfD"]
+      pollingSensitivity: { growth: -0.035, inflation: 0.09, unemployment: 0.105, governmentTrust: 0.09, polarization: 0.09 },
+      aliases: ["AfD", "far-right", "Far-Right", "Far Right", "Right-Wing Populist", "Right-Wing Populists"]
     },
     other: {
       name: "Other",
@@ -88,7 +95,7 @@
       fullName: "Union Christlicher Democraten",
       color: "#171717",
       status: "dormant",
-      aliases: ["UCD", "Union Christlicher Democraten", "Conservatives"]
+      aliases: ["UCD", "Union Christlicher Democraten", "Conservatives", "Christian Democrats", "Union"]
     }
   };
 
@@ -98,24 +105,18 @@
     {
       id: "seeheimer_kreis",
       name: "Seeheimer Kreis (Seeheim Circle)",
-      orientation: "Moderate, centrist, and market-friendly.",
-      description: "Pragmatic reform and a market-oriented Third Way; influential among parliamentary members.",
       strengthTracks: [{ key: "center_strength", dissentKey: "center_dissent", weight: 1 }, { key: "reformist_strength", dissentKey: "reformist_dissent", weight: 0.5 }],
       color: "#9a7900"
     },
     {
       id: "parlamentarische_linke",
       name: "Parlamentarische Linke (Parliamentary Left)",
-      orientation: "Traditional left wing.",
-      description: "Favors Keynesian economic policy and a strong welfare state, and challenges reforms seen as weakening worker protections.",
       strengthTracks: [{ key: "left_strength", dissentKey: "left_dissent", weight: 1 }, { key: "labor_strength", dissentKey: "labor_dissent", weight: 1 }],
       color: "#e3000f"
     },
     {
       id: "netzwerk_berlin",
       name: "Netzwerk Berlin (Berlin Network)",
-      orientation: "Reformist and centrist-left.",
-      description: "Promotes modernized social democracy, with positions and membership that often overlap with the Seeheim Circle.",
       strengthTracks: [{ key: "reformist_strength", dissentKey: "reformist_dissent", weight: 0.5 }, { key: "neorevisionist_strength", dissentKey: "neorevisionist_dissent", weight: 1 }],
       color: "#a34a72"
     }
@@ -161,9 +162,7 @@
       var dissent = metrics[index].dissent;
       return '<li class="faction-row"><div class="faction-heading"><strong>' + escapeHtml(faction.name) +
         '</strong></div><div class="faction-stats"><span class="faction-stat">Strength <b>' + strength.toFixed(0) +
-        '%</b></span><span class="faction-stat">Dissent <b>' + dissent.toFixed(2) + '%</b></span></div>' +
-        '<p class="faction-orientation">' + escapeHtml(faction.orientation) + '</p><p class="faction-description">' +
-        escapeHtml(faction.description) + '</p></li>';
+        '%</b></span><span class="faction-stat">Dissent <b>' + dissent.toFixed(2) + '%</b></span></div></li>';
     }).join('');
     return '<div class="faction-strength-distribution" role="img" aria-label="Faction strength distribution">' + segments +
       '</div><ul class="party-list faction-list">' + rows + '</ul>';
@@ -412,7 +411,7 @@
   }
 
   var initialRelations = {
-    die_linke: 55, greens: 80, fdp: 35, cdu: 55, csu: 55, afd: 5, other: 50
+    die_linke: 40, greens: 80, fdp: 30, cdu: 55, csu: 55, afd: 10, other: 50
   };
 
   function ensurePolitics(qualities) {
@@ -433,6 +432,9 @@
     qualities.afd_coalitions = qualities.afd_coalitions || { state: 0, national: 0 };
     if (!qualities._coalition_dissent_scaled) {
       var dissent = Number(qualities.coalition_dissent) || 0;
+      // Each positive base unit adds 20 percentage points. Poor relations with
+      // any coalition partner double the increase; good relations with all of
+      // them halve it.
       Object.defineProperty(qualities, "coalition_dissent", {
         configurable: true,
         enumerable: true,
@@ -440,14 +442,21 @@
         set: function (next) {
           next = Number(next) || 0;
           var delta = next - dissent;
-          if (delta > 0 && Array.isArray(qualities.government_parties)) {
-            var partners = qualities.government_parties.filter(function (id) { return id !== "spd"; });
-            if (partners.length) {
-              var average = partners.reduce(function (sum, id) { return sum + relationValue(qualities, "spd", id); }, 0) / partners.length;
-              delta *= Math.max(0.5, Math.min(1, 1 - Math.max(0, average - 50) / 60));
-            }
+          if (delta > 0) {
+            var partners = Array.isArray(qualities.government_parties)
+              ? qualities.government_parties.filter(function (id) { return String(id).toLowerCase() !== "spd"; })
+              : [];
+            var hasHostilePartner = partners.some(function (id) {
+              return relationValue(qualities, "spd", id) < 30;
+            });
+            var allCooperative = partners.length > 0 && partners.every(function (id) {
+              return relationValue(qualities, "spd", id) > 60;
+            });
+            delta *= hasHostilePartner ? 40 : (allCooperative ? 10 : 20);
+          } else if (delta < 0) {
+            delta *= 20;
           }
-          dissent += delta;
+          dissent = Math.max(0, Math.min(100, dissent + delta));
         }
       });
       Object.defineProperty(qualities, "_coalition_dissent_scaled", {
@@ -481,11 +490,13 @@
       }
     });
     var bourgeoisieRightness = bourgeoisieSupport ? bourgeoisieWeightedRightness / bourgeoisieSupport : 0;
+    bourgeoisieRightness = Math.max(0, Math.min(100,
+      bourgeoisieRightness + (Number(qualities.bourgeoisie_lr_adjustment) || 0)));
     return {
       afdPolling: Number(shares.afd) || 0,
       bourgeoisieSupport: bourgeoisieSupport,
       bourgeoisieRightness: bourgeoisieRightness,
-      bourgeoisieRightStrength: bourgeoisieWeightedRightness / 100,
+      bourgeoisieRightStrength: bourgeoisieSupport * bourgeoisieRightness / 100,
       stateCoalitions: Math.max(0, Number(coalitions.state) || 0),
       nationalCoalitions: Math.max(0, Number(coalitions.national) || 0),
       rightWingScores: ideology
@@ -543,6 +554,40 @@
   }
 
   function setUnionState(qualities, state) {
+    var wasUnified = !!qualities.union_unified;
+    var becomingUnified = state === "unified";
+    var groups = Array.isArray(qualities.classes) ? qualities.classes : [];
+    if (wasUnified !== becomingUnified) {
+      groups.forEach(function (group) {
+        var cduKey = group + "_cdu";
+        var csuKey = group + "_csu";
+        var ucdKey = group + "_ucd";
+        if (becomingUnified) {
+          qualities[ucdKey] = (Number(qualities[cduKey]) || 0) + (Number(qualities[csuKey]) || 0);
+          delete qualities[cduKey];
+          delete qualities[csuKey];
+        } else {
+          var unifiedSupport = Number(qualities[ucdKey]) || 0;
+          qualities[cduKey] = unifiedSupport / 2;
+          qualities[csuKey] = unifiedSupport / 2;
+          delete qualities[ucdKey];
+        }
+      });
+      var partyIds = Array.isArray(qualities.parties) ? qualities.parties.slice() : startingRoster.slice();
+      partyIds = partyIds.filter(function (id) { return becomingUnified ? id !== "cdu" && id !== "csu" : id !== "ucd"; });
+      if (becomingUnified) partyIds.push("ucd");
+      else if (wasUnified) partyIds.push("cdu", "csu");
+      qualities.parties = partyIds;
+      if (Array.isArray(qualities.government_parties)) {
+        var government = qualities.government_parties.map(function (id) {
+          if (becomingUnified && (id === "cdu" || id === "csu")) return "ucd";
+          if (!becomingUnified && id === "ucd") return "cdu";
+          return id;
+        });
+        if (!becomingUnified && wasUnified && government.indexOf("cdu") !== -1) government.push("csu");
+        qualities.government_parties = government.filter(function (id, index) { return government.indexOf(id) === index; });
+      }
+    }
     if (state === "unified") {
       qualities.union_alliance_active = 0;
       qualities.union_unified = 1;
@@ -561,6 +606,43 @@
     qualities.party_rightwing[partyId] = Math.max(0, Math.min(100,
       Number(qualities.party_rightwing[partyId]) + Number(delta || 0)));
     recalculateFirewall(qualities);
+  }
+
+  function adjustBourgeoisieRightness(qualities, delta) {
+    ensurePolitics(qualities);
+    qualities.bourgeoisie_lr_adjustment = Math.max(-100, Math.min(100,
+      (Number(qualities.bourgeoisie_lr_adjustment) || 0) + Number(delta || 0)));
+    recalculateFirewall(qualities);
+  }
+
+  function unionFutureStatus(qualities) {
+    var shares = window.electionSystem.voteShares(qualities);
+    var unionShare = qualities.union_unified
+      ? (Number(shares.ucd) || 0)
+      : (Number(shares.cdu) || 0) + (Number(shares.csu) || 0);
+    var positions = qualities.party_rightwing || {};
+    var unionScore = qualities.union_unified
+      ? (Number(positions.ucd) || 65)
+      : ((Number(positions.cdu) || 0) + (Number(positions.csu) || 0)) / 2;
+    var afdRelation = (relationValue(qualities, "cdu", "afd") + relationValue(qualities, "csu", "afd")) / 2;
+    var afdInGovernment = (Number((qualities.afd_coalitions || {}).national) || 0) > 0 ||
+      (Array.isArray(qualities.government_parties) && qualities.government_parties.indexOf("afd") !== -1);
+    var unify = unionShare < 20 && unionScore < 70;
+    var split = unionScore >= 70 && afdRelation > 60;
+    var pollsTriggered = unionShare < 25;
+    var trigger = pollsTriggered || afdInGovernment;
+    var eligible = !(Number(qualities.union_future_resolved) > 0) && !(Number(qualities.union_future_scheduled) > 0) && trigger &&
+      (!(Number(qualities.union_future_status_quo) > 0) || unify || split);
+    return {
+      eligible: eligible,
+      unify: unify,
+      split: split,
+      triggerReason: pollsTriggered ? "polls" : (afdInGovernment ? "afd_government" : "")
+    };
+  }
+
+  function shouldShowUnionFuture(qualities) {
+    return Number(qualities.modern_scenario) === 1 && !qualities.historical_mode && unionFutureStatus(qualities).eligible;
   }
 
   function canFormCoalition(qualities, partyIds, level) {
@@ -692,20 +774,28 @@
   }
 
   function trackRelationTrend(qualities, key, value) {
-    var previous = qualities.party_relation_previous || (qualities.party_relation_previous = {});
+    var previous = qualities.party_relation_month_previous || (qualities.party_relation_month_previous = {});
     var trends = qualities.party_relation_trends || (qualities.party_relation_trends = {});
-    var turn = [qualities.year, qualities.month, qualities.time, qualities.month_actions].join(":");
-    var turns = qualities.party_relation_turns || (qualities.party_relation_turns = {});
+    var months = qualities.party_relation_months || (qualities.party_relation_months = {});
+    var month = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1) - 1;
     if (previous[key] === undefined) {
       previous[key] = value;
       trends[key] = "same";
-      turns[key] = turn;
-    } else if (turns[key] !== turn || previous[key] !== value) {
+      months[key] = month;
+    } else if (month > months[key]) {
       trends[key] = value > previous[key] ? "up" : value < previous[key] ? "down" : "same";
       previous[key] = value;
-      turns[key] = turn;
+      months[key] = month;
+    } else if (month === months[key]) {
+      previous[key] = value;
     }
     return trends[key] || "same";
+  }
+
+  function renderTrendArrow(direction) {
+    if (direction === "up") return '<span class="economy-trend economy-trend-up" aria-label="increased" title="Compared with last month">↑</span>';
+    if (direction === "down") return '<span class="economy-trend economy-trend-down" aria-label="decreased" title="Compared with last month">↓</span>';
+    return '<span class="economy-trend economy-trend-steady" aria-label="unchanged" title="No change from last month">→</span>';
   }
 
   function firewallDescription(value) {
@@ -822,13 +912,18 @@
     var caretakerActive = !!caretakerId && /caretaker/i.test(String(qualities.government_type || ""));
     var caretakerParty = getParty(caretakerId);
     var caretakerLabel = caretakerId === "cdu" && Array.isArray(qualities.caretaker_parties) && qualities.caretaker_parties.indexOf("csu") !== -1 ? "CDU/CSU" : caretakerParty ? caretakerParty.name : caretakerId;
+    var legacyPartyNames = {
+      z: "Center Party", ddp: "German Democratic Party", dvp: "German People’s Party",
+      dnvp: "German National People’s Party", nsdap: "Nazi Party", kpd: "Communist Party",
+      bvp: "Bavarian People’s Party", i: "Independent"
+    };
     return '<ul class="cabinet-roster">' + ministries.map(function (ministry) {
       var party = caretakerActive ? caretakerId : String(qualities[ministry[2]] || "");
       var partyId = party.toLowerCase();
-      var ministerName = caretakerActive ? caretakerLabel + " caretaker minister" : (qualities[ministry[1]] || 'Vacant');
+      var partyLabel = caretakerActive ? caretakerLabel : getParty(partyId) ? parties[partyId].name : legacyPartyNames[partyId] || party;
+      var occupant = party ? (getParty(partyId) ? renderName(partyId, partyLabel) : escapeHtml(partyLabel)) : 'Vacant';
       return '<li><strong>' + escapeHtml(ministry[0]) + '</strong><span>' +
-        escapeHtml(ministerName) + (party ? ' (' + (getParty(partyId) ? renderName(partyId, caretakerActive ? caretakerLabel : party) : escapeHtml(party)) + ')' : '') +
-        '</span></li>';
+        occupant + '</span></li>';
     }).join('') + '</ul>';
   }
 
@@ -864,11 +959,9 @@
     window.electionSystem.ensureStreetState(qualities);
     var focus = qualities.verfassungsschutz_focus;
     var focusPosition = ((focus + 100) / 2).toFixed(1);
-    var swing = Math.max(-2, Math.min(2,
-      (qualities.grassroots_mobilization - qualities.right_wing_agitation) / 25));
-    var backlash = Math.max(0, qualities.left_wing_militancy - 35) * 0.025;
-    var blockChance = window.partySystem.streetRallyBlockChance(qualities);
-    var rallyEffectiveness = 0.5 + qualities.grassroots_mobilization / 100;
+    var polarization = Math.max(0, Math.min(100, Number(qualities.political_polarization) || 25));
+    var polarizationLabel = polarization <= 20 ? 'Very low' : polarization <= 40 ? 'Low' : polarization <= 60 ? 'Moderate' : polarization <= 80 ? 'High' : 'Very high';
+    var polarizationColor = relationColor(100 - polarization);
     return '<section class="party-panel street-panel"><h3>Street and civil society</h3>' +
       streetMetric('Right-wing agitation', qualities.right_wing_agitation, '#b94b42', 'Far-right street pressure and intimidation. Higher values strengthen the AfD’s polling position.') +
       streetMetric('Grassroots mobilization', qualities.grassroots_mobilization, '#39833b', 'The SPD’s ability to organize unions, civic groups, and peaceful democratic counter-protests.') +
@@ -878,9 +971,9 @@
       '</span></div><div class="street-focus-meter" role="img" aria-label="Security focus: ' + escapeHtml(focusDescription(focus)) + '"><span style="left:' + focusPosition + '%"></span></div>' +
       '<div class="street-focus-labels"><span>Far-left targeted</span><span>Balanced</span><span>Far-right targeted</span></div>' +
       '<p>Negative values put more scrutiny on the far-left; positive values put more scrutiny on the far-right.</p></div>' +
-      '<p class="street-impact">Current polling effect: grassroots versus right-wing agitation shifts up to 2 points between the SPD and AfD. Militancy above 35 and far-left security focus can reduce SPD support; far-right focus can reduce AfD support.</p>' +
-      '<p class="street-impact">Rally effect: grassroots puts rally gains at ' + Math.round(rallyEffectiveness * 100) + '% of baseline. Current right-wing obstruction chance: ' + Math.round(blockChance * 100) + '%, based on agitation, CDU/CSU and FDP right-wing scores, and their relations with the SPD. If a rally is blocked, militancy rises by 12; civic defense weighs militancy and grassroots against agitation, and a non-negative defense score reopens the rally.</p>' +
-      '<p class="street-impact">Security effect: changes in Verfassungsschutz focus also shift interior and Prussian police loyalty. Strongly one-sided focus and an unfavorable street balance add pressure to firewall integrity.</p>' +
+      '<div class="street-metric polarization-metric"><div class="street-metric-heading"><strong>Political polarisation</strong><span style="color:' + polarizationColor + '">' + polarizationLabel + '</span></div><div class="party-meter"><span style="width:' + Math.max(0, Math.min(100, polarization)) + '%;--party-color:' + polarizationColor + '"></span></div></div>' +
+      streetMetric('Police loyalty', (Number(qualities.prussian_police_loyalty) || 0) * 100, '#526b8a', 'How firmly the police stand behind the constitutional order.') +
+      streetMetric('Police strength', Number(qualities.prussian_police_strength) || 0, '#526b8a', 'The reach and capacity of the police.') +
       '</section>';
   }
 
@@ -911,15 +1004,15 @@
       if (unionUnified && !relationEntries.some(function (entry) { return entry.id === "ucd"; })) {
         relationEntries.push({ id: "ucd", label: "UCD", key: "ucd", value: (relationValue(qualities, "spd", "cdu") + relationValue(qualities, "spd", "csu")) / 2 });
       }
+      relationEntries.sort(function (a, b) { return b.value - a.value; });
       var relations = relationEntries.map(function (entry) {
         var value = entry.value;
         var color = relationColor(value);
         var trend = trackRelationTrend(qualities, entry.key, value);
-        var arrow = trend === "up" ? "↑" : trend === "down" ? "↓" : "−";
-        var trendColor = trend === "up" ? "#287a38" : trend === "down" ? "#b3261e" : "#777";
+        var arrow = renderTrendArrow(trend);
         return '<li class="politics-relation"><div class="politics-relation-heading">' + renderName(entry.id, entry.label) +
           '<span class="relation-status" style="color:' + color + '">' + Math.round(value) + ' · ' + relationDescription(value) +
-          ' <span class="relation-trend" title="Change since the previous turn" style="color:' + trendColor + '">' + arrow + '</span></span></div>' +
+          ' <span class="relation-trend" title="Change; direction remains visible for two turns">' + arrow + '</span></span></div>' +
           '<div class="party-meter"><span style="width:' + value + '%;--party-color:' + color + '"></span></div></li>';
       }).join('');
       var firewall = recalculateFirewall(qualities);
@@ -929,7 +1022,7 @@
       var bourgeoisieRelation = getBourgeoisieAfdRelation(qualities);
       return '<section class="party-panel politics-panel"><h3>SPD relations</h3>' +
         '<ul class="party-list politics-relations">' + relations + '</ul>' +
-        '<hr><h3>SPD factions</h3><p class="faction-note">Strength shows relative faction influence; dissent is the weighted average of each faction’s existing dissent tracks.</p>' + renderFactionRows(qualities) +
+        '<hr><h3>SPD factions</h3><p class="faction-note">Strength shows each faction’s influence within the party; dissent shows its opposition to the party’s current direction.</p>' + renderFactionRows(qualities) +
         '<hr><h3>Firewall integrity</h3><div class="firewall-score"><strong>' + firewall + ' / 100</strong>' +
         '<span>' + firewallDescription(firewall) + '</span></div><div class="firewall-meter"><span style="width:' + firewall + '%"></span></div>' +
         '<details class="politics-details firewall-details"' + (detailsExpanded ? ' open' : '') + '><summary>Details</summary>' +
@@ -939,9 +1032,68 @@
         '<p><strong><span class="bourgeoisie-label">Bourgeoisie</span>–AfD relations:</strong> <span style="color:' + relationColor(bourgeoisieRelation) + '">' +
         Math.round(bourgeoisieRelation) + ' · ' + relationDescription(bourgeoisieRelation) + '</span></p>' +
         '<p><strong>Street climate pressure:</strong> ' + (qualities.firewall_inputs.street_pressure || 0) + ' points.</p>' +
+        '<p><strong>Urgency against the far right:</strong> ' + Math.max(0, Math.min(10, Number(qualities.nazi_urgency) || 0)) + ' / 10.</p>' +
         '</div></details></section>';
     }
     return null;
+  }
+
+  function recordEconomyHistory(qualities) {
+    var month = (Number(qualities.year) || 0) * 12 + (Number(qualities.month) || 1) - 1;
+    var history = Array.isArray(qualities.economy_history) ? qualities.economy_history : (qualities.economy_history = []);
+    var point = { month: month, unemployment: Number(qualities.unemployed) || 0, inflation: Number(qualities.inflation) || 0, growth: Number(qualities.economic_growth) || 0 };
+    var latest = history.length ? history[history.length - 1] : null;
+    var trendKeys = ["unemployment", "inflation", "growth"];
+    var trends = qualities.economy_trends || (qualities.economy_trends = {});
+    var previousTick = Number(qualities.economy_trend_month);
+    if (!isFinite(previousTick) || month > previousTick) {
+      trendKeys.forEach(function (key) {
+        var previousValue = latest && latest.month === month - 1 ? Number(latest[key]) : Number(point[key]);
+        var currentValue = Number(point[key]);
+        trends[key] = { direction: currentValue > previousValue ? "up" : currentValue < previousValue ? "down" : "same" };
+      });
+      qualities.economy_trend_month = month;
+    }
+    if (latest && latest.month === month) history[history.length - 1] = point;
+    else history.push(point);
+    qualities.economy_history = history.filter(function (item) { return item.month >= month - 12 && item.month <= month; });
+    return qualities.economy_history;
+  }
+
+  function renderEconomy(qualities) {
+    var history = recordEconomyHistory(qualities);
+    function value(key) {
+      var number = Number(qualities[key]);
+      return isFinite(number) ? number.toFixed(1) : '—';
+    }
+    function trend(key) {
+      return renderTrendArrow((qualities.economy_trends[key] || {}).direction);
+    }
+    function chart(key, label, unit, color) {
+      var width = 640, height = 220, left = 48, right = 12, top = 14, bottom = 34;
+      var values = history.map(function (item) { return Number(item[key]) || 0; });
+      var low = Math.min.apply(null, values), high = Math.max.apply(null, values);
+      var padding = Math.max((high - low) * 0.15, 1);
+      low = Math.floor(low - padding); high = Math.ceil(high + padding);
+      if (low === high) high = low + 1;
+      var plotWidth = width - left - right, plotHeight = height - top - bottom;
+      function x(i) { return left + (history.length < 2 ? plotWidth / 2 : plotWidth * i / (history.length - 1)); }
+      function y(v) { return top + plotHeight * (1 - (v - low) / (high - low)); }
+      var grid = [0, 1, 2, 3].map(function (i) {
+        var v = low + (high - low) * i / 3;
+        return '<line x1="' + left + '" x2="' + (width - right) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="poll-history-grid"/><text x="' + (left - 7) + '" y="' + (y(v) + 4) + '" text-anchor="end" class="poll-history-axis">' + v.toFixed(1) + '</text>';
+      }).join('');
+      var path = history.map(function (item, i) { return (i ? 'L ' : 'M ') + x(i) + ' ' + y(Number(item[key]) || 0); }).join(' ');
+      var labels = history.map(function (item, i) {
+        if (i !== 0 && i !== history.length - 1 && i % 3 !== 0) return '';
+        var m = item.month % 12;
+        return '<text x="' + x(i) + '" y="' + (height - 8) + '" text-anchor="middle" class="poll-history-axis">' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] + ' ' + Math.floor(item.month / 12) + '</text>';
+      }).join('');
+      var qualityKey = key === 'growth' ? 'economic_growth' : (key === 'unemployment' ? 'unemployed' : key);
+      return '<h4>' + label + ' <span class="economy-current-value">' + value(qualityKey) + unit + ' ' + trend(key) + '</span></h4><div class="poll-history-wrap"><svg class="poll-history-chart" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="' + label + ' over time">' + grid + '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' + labels + '</svg></div>';
+    }
+    return '<section class="party-panel economy-panel"><h3>Economic indicators over time</h3>' +
+      chart('unemployment', 'Unemployment', '%', '#d04a3a') + chart('inflation', 'Inflation', '%', '#3977c3') + chart('growth', 'Economic growth', '%', '#39833b') + '</section>';
   }
 
   function initializePartyState(qualities) {
@@ -999,12 +1151,18 @@
     setUnionAlliance: setUnionAlliance,
     setUnionState: setUnionState,
     adjustRightWing: adjustRightWing,
+    adjustBourgeoisieRightness: adjustBourgeoisieRightness,
+    shouldShowUnionFuture: shouldShowUnionFuture,
+    unionFutureStatus: unionFutureStatus,
     recalculateFirewall: recalculateFirewall,
     getFirewallInputs: getFirewallInputs,
     getNationalCoalitionChance: getNationalCoalitionChance,
     canFormCoalition: canFormCoalition,
     recordCoalition: recordCoalition,
     renderSidebar: renderSidebar,
+    renderTrendArrow: renderTrendArrow,
+    recordEconomyHistory: recordEconomyHistory,
+    renderEconomy: renderEconomy,
     setDetailsExpanded: function (expanded) { detailsExpanded = !!expanded; },
     renderName: renderName,
     colorizeText: colorizeText

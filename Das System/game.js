@@ -48,6 +48,20 @@
     soundEffectsVolume = readVolumeSetting('das_system_sound_effects_volume', 0.5);
     bindMusicAudio(ui);
 
+    // Loading a save calls setBg with the saved state background after the
+    // page callback. Older saves often have no background, so supply the
+    // current UI theme at the final point where that empty value is applied.
+    var originalSetBg = ui.setBg;
+    ui.setBg = function(background) {
+      if ((background === null || background === undefined || background === '' || background === 'null') && crisisBackgroundScene) {
+        return;
+      }
+      if (background === null || background === undefined || background === '' || background === 'null') {
+        background = this.dark_mode ? 'img/backround_dark.jpg' : 'img/backround_bright.jpg';
+      }
+      return originalSetBg.call(this, background);
+    };
+
     var originalDisplayContent = ui.displayContent;
     ui.displayContent = function() {
       var state = this.dendryEngine && this.dendryEngine.state;
@@ -68,6 +82,22 @@
           content.style.visibility = previousVisibility;
         });
       }
+    };
+
+    // Returning from an event often lands on the main card screen without a
+    // new-page transition. Drain any remaining monthly events after the main
+    // screen finishes rendering, so the queue cannot be stranded there.
+    var originalDisplayChoices = ui.displayChoices;
+    ui.displayChoices = function() {
+      var displayed = originalDisplayChoices.apply(this, arguments);
+      var engine = this.dendryEngine;
+      var state = engine && engine.state;
+      var queue = state && state.qualities && state.qualities.pending_event_queue;
+      if (state && (state.sceneId === 'main' || state.sceneId === 'main.main_easy') &&
+          Array.isArray(queue) && queue.length && engine.game.scenes[queue[0]]) {
+        engine.goToScene(queue[0]);
+      }
+      return displayed;
     };
 
     document.addEventListener('click', function() {
@@ -474,6 +504,18 @@
     var engine = window.dendryUI.dendryEngine;
     var state = engine.state;
     var scene = state.sceneId;
+    // Save loads can restore a scene without restoring the UI's theme backdrop.
+    // Reapply it on every page change; the helper preserves crisis artwork and
+    // selects the correct light or dark background.
+    applyThemeBackground();
+    if (scene === 'post_event' && state.qualities && window.electionSystem &&
+        state.qualities.modern_scenario === 1 && !state.qualities.historical_mode) {
+      window.electionSystem.updateRightWingAgitation(state.qualities);
+    }
+    if (state.qualities && Array.isArray(state.qualities.pending_event_queue)) {
+      var queuedEventIndex = state.qualities.pending_event_queue.indexOf(scene);
+      if (queuedEventIndex !== -1) state.qualities.pending_event_queue.splice(queuedEventIndex, 1);
+    }
     updateEventContinueLabel(scene, document.getElementById('content'));
     var eventDetails = crisisSuperEvents[scene];
     if (eventDetails) {
@@ -482,12 +524,15 @@
       restoreCrisisBackground();
       if (crisisAudioSnapshot) stopCrisisAudio();
     }
-    // Resolve every event that was available at the same monthly checkpoint
-    // before allowing the player back to the normal month screen.
-    if (scene === 'main' && state.qualities && Array.isArray(state.qualities.pending_event_queue) &&
-        state.qualities.pending_event_queue.length && !state.qualities.draining_event_queue) {
-      state.qualities.draining_event_queue = 1;
-      engine.goToScene('post_event.events_choice');
+    // Resolve every event saved at this monthly checkpoint before normal play.
+    // Reopening the #event chooser can lose cards after the first card has
+    // been played, so advance directly through the stored scene IDs.
+    if ((scene === 'main' || scene === 'main.main_easy') && state.qualities && Array.isArray(state.qualities.pending_event_queue) &&
+        state.qualities.pending_event_queue.length) {
+      var nextQueuedEvent = state.qualities.pending_event_queue[0];
+      if (engine.game.scenes[nextQueuedEvent]) {
+        engine.goToScene(nextQueuedEvent);
+      }
       return;
     }
     if (scene === 'post_event.events_choice' && state.qualities) state.qualities.draining_event_queue = 0;
@@ -508,9 +553,9 @@
 
   var modernMinistries = [
     ['foreign','Foreign Affairs'], ['interior','Interior Affairs'], ['justice','Justice Affairs'],
-    ['labor','Labour/Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance Affairs'],
-    ['health','Health Affairs'], ['environment','Environment Affairs'], ['defense','Defence Affairs'],
-    ['education','Education/Research Affairs']
+    ['labor','Labour and Social Affairs'], ['economic','Economic Affairs'], ['finance','Finance Affairs'],
+    ['health','Health Affairs'], ['environment','Climate Affairs'], ['defense','Defence Affairs'],
+    ['education','Education and Research Affairs']
   ];
   var modernPartyLabels = {spd:'SPD',cdu:'CDU',csu:'CSU',greens:'Greens',fdp:'FDP',die_linke:'Die Linke',afd:'AfD'};
 
@@ -577,11 +622,17 @@
       { id:'spd_greens', name:'Red-Green Coalition', parts:['spd','greens'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'spd_linke', name:'Red–Pink Coalition', parts:['spd','die_linke'], spd:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'left', name:'Left Coalition', parts:['spd','greens','die_linke'], spd:true, warning:'Relations with the CDU/CSU and FDP will suffer severely.', chancellor:'Olaf Scholz', chancellorParty:'SPD' },
-      { id:'minority', name:'SPD Minority Government', parts:['spd'], spd:true, minority:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
+      { id:'minority', name:'SPD-Led Minority Government', parts:['spd'], spd:true, minority:true, chancellor:'Olaf Scholz', chancellorParty:'SPD' },
       { id:'jamaica', name:'Jamaica Coalition', parts:['cdu','csu','greens','fdp'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'right', name:'Right Coalition', parts:['cdu','csu','afd'], spd:false, chancellor:'Angela Merkel', chancellorParty:'CDU' },
       { id:'bourgeoisie', name:'Bourgeoisie Coalition', parts:['fdp','cdu','csu','afd'], spd:false, chancellor:'Friedrich Merz', chancellorParty:'CDU' }
     ];
+    var redGreenSeats = coalitionSeatShare(result, ['spd','greens']).seats;
+    var redGreenWithLinkeSeats = coalitionSeatShare(result, ['spd','greens','die_linke']).seats;
+    var afdPolling = Number(result.shares && result.shares.afd) || 0;
+    // Reuse vanilla's urgency threshold (3); in the modern scenario, each 5 AfD polling points add one level.
+    var afdThreatUrgency = Math.max(Number(qualities.nazi_urgency) || 0, Math.floor(afdPolling / 5));
+    var redGreenHasMinorityMajority = redGreenSeats < majority && redGreenWithLinkeSeats >= majority;
     function appendButton(parent, label, callback, className) {
       var button = document.createElement('button');
       button.type = 'button';
@@ -596,6 +647,107 @@
       qualities.government_formation_pending = 0;
       qualities.government_formed_summary_time = Number(qualities.time) || 0;
       window.dendryUI.dendryEngine.goToScene('modern_government_return');
+    }
+    if (mode === 'toleration' && qualities.modern_selected_coalition === 'minority') {
+      var toleranceHeading = document.createElement('h2');
+      toleranceHeading.textContent = 'Choose a toleration partner';
+      controls.appendChild(toleranceHeading);
+      var toleranceIntro = document.createElement('p');
+      toleranceIntro.textContent = 'Choose a party that can give the SPD a parliamentary majority while supporting the government from outside the cabinet.';
+      controls.appendChild(toleranceIntro);
+      var tolerationPartners = [
+        { id:'union', parts:['cdu','csu'], label:'CDU/CSU', scene:'modern_form_minority_tolerated_union', baseParts:['spd'] },
+        { id:'greens', parts:['greens'], label:'Greens', scene:'modern_form_minority_tolerated_greens' },
+        { id:'fdp', parts:['fdp'], label:'FDP', scene:'modern_form_minority_tolerated_fdp' },
+        { id:'die_linke', parts:['die_linke'], label:'Die Linke', scene:'modern_form_minority_tolerated_left' }
+      ];
+      if (redGreenHasMinorityMajority) {
+        tolerationPartners.splice(1, 0, {
+          id:'red_green_linke', parts:['die_linke'], label:'Die Linke (with SPD/Green government)',
+          baseParts:['spd','greens'], redGreenLinke:true
+        });
+      }
+      var viableTolerationPartners = tolerationPartners.map(function(partner) {
+        var seats = coalitionSeatShare(result, partner.parts).seats;
+        var cabinetParts = partner.baseParts || ['spd'];
+        var baseSeats = coalitionSeatShare(result, cabinetParts).seats;
+        return { id:partner.id, parts:partner.parts, label:partner.label, scene:partner.scene, seats:seats,
+          cabinetParts:cabinetParts, baseSeats:baseSeats, redGreenLinke:!!partner.redGreenLinke };
+      }).filter(function(partner) {
+        return partner.seats > 0 && partner.baseSeats + partner.seats >= majority;
+      });
+      if (!viableTolerationPartners.length) {
+        var noMajority = document.createElement('p');
+        noMajority.className = 'modern-coalition-unavailable-note';
+        noMajority.textContent = 'No single available party can give the SPD a parliamentary majority through a toleration agreement.';
+        controls.appendChild(noMajority);
+      }
+      viableTolerationPartners.forEach(function(partner) {
+        var relationIds = partner.parts;
+        var relationsOkay = relationIds.every(function(id) {
+          return window.partySystem.relationValue(qualities, 'spd', id) > (partner.redGreenLinke ? 60 : 50);
+        });
+        var wouldSeekCabinet = !partner.redGreenLinke && partner.seats >= partner.baseSeats;
+        var threatOkay = !partner.redGreenLinke || afdThreatUrgency >= 3;
+        var available = relationsOkay && !wouldSeekCabinet && threatOkay;
+        var combinedSeats = partner.baseSeats + partner.seats;
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'modern-coalition-option ' + (available ? 'possible' : 'unavailable');
+        card.disabled = !available;
+        var choice = document.createElement('span');
+        choice.className = 'modern-coalition-choice';
+        choice.textContent = partner.redGreenLinke ? 'Form SPD/Green minority government with Die Linke toleration' : 'Ask ' + partner.label + ' for toleration';
+        card.appendChild(choice);
+        var seatSummary = document.createElement('span');
+        seatSummary.className = 'modern-coalition-seat-share';
+        seatSummary.textContent = combinedSeats + ' of ' + result.seatTotal + ' seats together';
+        card.appendChild(seatSummary);
+        if (!relationsOkay || wouldSeekCabinet || !threatOkay) {
+          var reason = document.createElement('p');
+          reason.className = 'modern-coalition-unavailable-note';
+          reason.textContent = !relationsOkay
+            ? (partner.redGreenLinke ? 'Die Linke must have cooperative relations with the SPD.' : 'Relations with the SPD are too strained for an agreement.')
+            : !threatOkay ? 'The AfD threat is not high enough for Die Linke to offer toleration.'
+            : 'This party has at least as many seats as the SPD and would seek cabinet seats rather than support it from outside.';
+          card.appendChild(reason);
+        }
+        card.addEventListener('click', function() {
+          if (!available) return;
+          qualities.modern_election_flow = 'coalitions';
+          qualities.government_parties = partner.cabinetParts.slice();
+          qualities.government_toleration_parties = partner.parts.slice();
+          qualities.government_type = partner.redGreenLinke
+            ? 'SPD/Green minority government with Die Linke toleration'
+            : 'SPD minority government with ' + partner.label + ' toleration';
+          qualities.in_grand_coalition = 0;
+          qualities.in_weimar_coalition = 0;
+          qualities.in_popular_front = 0;
+          qualities.in_left_front = 0;
+          qualities.in_minority_government = 1;
+          qualities.spd_in_government = 1;
+          qualities.spd_toleration = 0;
+          qualities.spd_caretaker = 0;
+          qualities.caretaker_party = null;
+          qualities.caretaker_parties = [];
+          qualities.government_formation_pending = 0;
+          updateModernCabinet(qualities, { parts:partner.cabinetParts, chancellorParty:'SPD' }, result, []);
+          if (partner.redGreenLinke) {
+            qualities.government_formed_summary_time = Number(qualities.time) || 0;
+            window.dendryUI.dendryEngine.goToScene('modern_government_return');
+          } else {
+            window.dendryUI.dendryEngine.goToScene(partner.scene);
+          }
+        });
+        controls.appendChild(card);
+      });
+      appendButton(controls, 'Back to coalition options', function() {
+        qualities.modern_election_flow = 'coalitions';
+        qualities.modern_selected_coalition = null;
+        renderModernElectionControls(gameState, content);
+      }, 'modern-election-action');
+      content.appendChild(controls);
+      return;
     }
     if (mode === 'ministries' && qualities.modern_selected_coalition) {
       var coalition = coalitionOptions.filter(function(option) { return option.id === qualities.modern_selected_coalition; })[0];
@@ -664,10 +816,18 @@
             returnToGame();
           }, 'modern-election-action primary');
         }
-        appendButton(controls, 'Back to coalition options', function() {
+        var ministryActions = document.createElement('div');
+        ministryActions.className = 'modern-ministry-actions';
+        var resetPoints = appendButton(ministryActions, 'Reset Points', function() {
+          qualities.spd_ministries_selected = [];
+          renderModernElectionControls(gameState, content);
+        }, 'modern-election-action modern-ministry-control');
+        resetPoints.disabled = chosen.length === 0;
+        appendButton(ministryActions, 'Back to Coalition Options', function() {
           qualities.modern_election_flow='coalitions'; qualities.modern_selected_coalition=null;
           qualities.spd_ministries_selected=[]; renderModernElectionControls(gameState,content);
-        }, 'modern-election-action');
+        }, 'modern-election-action modern-ministry-control');
+        controls.appendChild(ministryActions);
         content.appendChild(controls); return;
       }
     }
@@ -675,29 +835,61 @@
     var heading=document.createElement('h2');
     heading.textContent=isNoSpd ? 'Coalitions without the SPD' : 'Choose a coalition to form the next government';
     controls.appendChild(heading);
+    var viableMajorityCoalition = coalitionOptions.some(function(option) {
+      if (option.minority) return false;
+      var shares = coalitionSeatShare(result, option.parts);
+      if (shares.seats < majority || !window.partySystem.canFormCoalition(qualities, option.parts, 'national')) return false;
+      return !option.spd || !option.parts.some(function(id) {
+        return id !== 'spd' && window.partySystem.relationValue(qualities, 'spd', id) <= 50;
+      });
+    });
+    var viableMinorityToleration = [
+      { support:['cdu','csu'] }, { support:['greens'] }, { support:['fdp'] }, { support:['die_linke'] }
+    ].some(function(option) {
+      var cabinet = coalitionSeatShare(result, ['spd']).seats;
+      var support = coalitionSeatShare(result, option.support).seats;
+      var relationThreshold = option.support[0] === 'die_linke' ? 60 : 50;
+      return support > 0 && cabinet + support >= majority && support < cabinet &&
+        option.support.every(function(id) { return window.partySystem.relationValue(qualities, 'spd', id) > relationThreshold; });
+    }) || redGreenHasMinorityMajority && window.partySystem.relationValue(qualities, 'spd', 'die_linke') > 60 && afdThreatUrgency >= 3;
+    var offerSnapElection = !viableMajorityCoalition && !viableMinorityToleration;
     coalitionOptions.filter(function(option) { return isNoSpd ? !option.spd : option.spd; }).forEach(function(option) {
       var shares=coalitionSeatShare(result,option.parts);
       var majorityPossible=option.minority || shares.seats>=majority;
       var compatible=window.partySystem.canFormCoalition(qualities,option.parts,'national');
       var relationBlocked=option.spd && option.parts.some(function(id) {
-        return id !== 'spd' && window.partySystem.relationValue(qualities,'spd',id) <= 50;
-      });
-      if (option.minority) {
-        var union=(Number(result.seats.cdu)||0)+(Number(result.seats.csu)||0);
-        majorityPossible=(Number(result.seats.spd)||0)>union && Object.keys(result.seats).filter(function(id){return !['spd','cdu','csu','other'].includes(id);}).every(function(id){return (Number(result.seats.spd)||0)>(Number(result.seats[id])||0);});
-      }
+          return id !== 'spd' && window.partySystem.relationValue(qualities,'spd',id) <= 50;
+        });
+      var threatBlocked=false;
       if (!majorityPossible) return;
-      var canForm=majorityPossible&&compatible&&!relationBlocked;
+      var canForm=majorityPossible&&compatible&&!relationBlocked&&!threatBlocked;
       var card=document.createElement('button'); card.type='button'; card.className='modern-coalition-option '+(canForm?'possible':'unavailable');
       card.disabled=!canForm;
       var choice=document.createElement('span'); choice.className='modern-coalition-choice';
       choice.innerHTML='Form a <strong>'+window.partySystem.colorizeText(option.name)+'</strong>';
       card.appendChild(choice);
       card.addEventListener('click',function(){
+        if (option.minority && !option.tolerationPartner) {
+          qualities.modern_selected_coalition = option.id;
+          qualities.government_toleration_parties = [];
+          qualities.modern_election_flow = 'toleration';
+          renderModernElectionControls(gameState, content);
+          return;
+        }
         if (option.id === 'left') {
+          qualities.center_dissent = (Number(qualities.center_dissent) || 0) + 20;
+          qualities.reformist_dissent = (Number(qualities.reformist_dissent) || 0) + 20;
           window.partySystem.adjustRelation(qualities,'spd','cdu',-25);
           window.partySystem.adjustRelation(qualities,'spd','csu',-25);
           window.partySystem.adjustRelation(qualities,'spd','fdp',-25);
+          if (!qualities.left_coalition_formed_before) {
+            qualities.party_rightwing = qualities.party_rightwing || {};
+            ['fdp','cdu','csu'].forEach(function(id) {
+              qualities.party_rightwing[id] = Math.min(100, (Number(qualities.party_rightwing[id]) || 0) + 5);
+            });
+            qualities.left_coalition_formed_before = 1;
+            if (window.partySystem.recalculateFirewall) window.partySystem.recalculateFirewall(qualities);
+          }
         }
         qualities.government_parties=option.parts.slice(); qualities.government_type=option.name;
         qualities.chancellor=option.chancellor; qualities.chancellor_party=option.chancellorParty;
@@ -708,7 +900,7 @@
         qualities.spd_caretaker=0; qualities.caretaker_party=null; qualities.caretaker_parties=[];
         qualities.modern_selected_coalition=option.id;
         qualities.spd_ministries_selected=[];
-        qualities.government_toleration_parties=[];
+        qualities.government_toleration_parties=option.tolerationPartner?[option.tolerationPartner]:[];
         if (option.spd) { qualities.modern_election_flow='ministries'; renderModernElectionControls(gameState,content); }
         else { updateModernCabinet(qualities, option, result, []); qualities.government_formation_pending=0; returnToGame(); }
       });
@@ -720,12 +912,28 @@
       }
       if (!canForm) {
         var note=document.createElement('p'); note.className='modern-coalition-unavailable-note';
-        note.textContent=relationBlocked?'Relations with a coalition partner must be above 50.':(!compatible?'Party compatibility prevents this coalition.':'');
+        note.textContent=relationBlocked
+          ? 'Relations with a coalition partner must be above 50.'
+          : threatBlocked ? 'The AfD threat is not high enough for Die Linke to offer toleration.'
+          : (!compatible?'Party compatibility prevents this coalition.':'');
         if (!note.textContent) return;
         card.appendChild(note);
       }
       controls.appendChild(card);
     });
+    if (!isNoSpd && offerSnapElection) {
+      appendButton(controls, 'No workable majority is available — call a new federal election', function() {
+        window.electionSystem.scheduleEarlyElection(qualities, 3);
+        window.electionSystem.installCaretaker(qualities);
+        qualities.government_trust = Math.max(0, (Number(qualities.government_trust) || 60) - 8);
+        qualities.political_polarization = Math.min(100, (Number(qualities.political_polarization) || 25) + 5);
+        qualities.government_formation_pending = 0;
+        qualities.modern_election_flow = 'coalitions';
+        qualities.modern_selected_coalition = null;
+        qualities.government_formed_summary_time = Number(qualities.time) || 0;
+        window.dendryUI.dendryEngine.goToScene('modern_government_return');
+      }, 'modern-election-action primary');
+    }
     appendButton(controls,isNoSpd?'Show coalitions including the SPD':'The SPD refuses to partake in government',function(){
       qualities.show_non_spd_coalitions=!isNoSpd; renderModernElectionControls(gameState,content);
     },'modern-election-action coalition-toggle');
@@ -738,6 +946,9 @@
       var gameState = dendryUI.dendryEngine.state;
       if (gameState.qualities && gameState.qualities.modern_scenario === 1 && window.electionSystem) {
           window.electionSystem.recordPollingHistory(gameState.qualities);
+      }
+      if (gameState.qualities && window.partySystem) {
+          window.partySystem.recordEconomyHistory(gameState.qualities);
       }
       var content = document.getElementById('content');
       var oldElectionPanel = document.getElementById('main-election-parliament');
@@ -783,6 +994,10 @@
           if (gameState.sceneId === 'modern_federal_election') {
               renderModernElectionControls(gameState, content);
           }
+      }
+      if (window.statusTab === 'status.economy' && window.partySystem) {
+          $('#qualities').html(window.partySystem.renderEconomy(gameState.qualities));
+          return;
       }
       // Some builds contain no status scenes. Keep rendering the main
       // scene and its choices when the optional sidebar data is absent.
