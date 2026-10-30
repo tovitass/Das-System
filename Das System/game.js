@@ -44,6 +44,28 @@
   var main = function(dendryUI) {
     ui = dendryUI;
     game = ui.game;
+    // At high coalition dissent, make Coalition Negotiations the next
+    // Government Affairs draw whenever the card is available.
+    var engine = ui.dendryEngine;
+    var originalDrawFromDeck = engine._drawFromDeck;
+    engine._drawFromDeck = function(deckId) {
+      var qualities = this.state && this.state.qualities || {};
+      var hand = this.state && this.state.currentHands && this.state.currentHands[this.state.sceneId] || [];
+      var coalitionScene = this.game.scenes.coalition_affairs;
+      var inCoalitionGovernment = (qualities.in_grand_coalition || 0) !== 0 ||
+        (qualities.in_weimar_coalition || 0) !== 0 ||
+        (qualities.in_popular_front || 0) !== 0;
+      var coalitionReady = deckId === 'main.govt' &&
+        (qualities.spd_in_government || 0) === 1 &&
+        (qualities.coalition_dissent || 0) >= 80 &&
+        (qualities.coalition_affairs_timer || 0) <= 0 &&
+        inCoalitionGovernment && coalitionScene && coalitionScene.isCard &&
+        !hand.some(function(card) { return card.id === 'coalition_affairs'; });
+      if (coalitionReady) {
+        return { id: 'coalition_affairs', title: coalitionScene.title, canChoose: true };
+      }
+      return originalDrawFromDeck.apply(this, arguments);
+    };
     musicVolume = readVolumeSetting('das_system_music_volume', 0.35);
     soundEffectsVolume = readVolumeSetting('das_system_sound_effects_volume', 0.5);
     bindMusicAudio(ui);

@@ -7843,6 +7843,8 @@
       "id": "levi",
       "type": "scene",
       "title": "Andrea Nahles",
+      "faceImage": "img/portraits/Nahles.png",
+      "cardImage": "img/portraits/Nahles.png",
       "isPinnedCard": true,
       "tags": [
         "advisor",
@@ -8375,6 +8377,8 @@
       "id": "severing",
       "type": "scene",
       "title": "Sigmar Gabriel",
+      "faceImage": "img/portraits/Gabriel.png",
+      "cardImage": "img/portraits/Gabriel.png",
       "isPinnedCard": true,
       "tags": [
         "advisor",
@@ -21701,6 +21705,8 @@
       "id": "wels",
       "type": "scene",
       "title": "Olaf Scholz",
+      "faceImage": "img/portraits/Scholz.png",
+      "cardImage": "img/portraits/Scholz.png",
       "isPinnedCard": true,
       "tags": [
         "advisor",
@@ -31479,6 +31485,7 @@
       "id": "labor_rights",
       "type": "scene",
       "title": "Workers’ Rights",
+      "cardImage": "img/Workers' Rights.jpg",
       "newPage": true,
       "isCard": true,
       "tags": [
